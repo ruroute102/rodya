@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.env
+.venv/
+venv/
+
+# Android
+*.iml
+.gradle/
+local.properties
+.idea/
+*.apk
+*.aab
+*.jks
+
+# IDE
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# Misc
+*.db
+*.sqlite3
+node_modules/
