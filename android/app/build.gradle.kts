@@ -79,7 +79,8 @@ dependencies {
     implementation(libs.okhttp)
     implementation(libs.okhttp.logging)
     implementation(libs.moshi)
-    ksp(libs.moshi.kotlin)
+    implementation(libs.moshi.kotlin)
+    ksp(libs.moshi.kotlin.codegen)
 
     // Room (local DB)
     implementation(libs.room.runtime)
