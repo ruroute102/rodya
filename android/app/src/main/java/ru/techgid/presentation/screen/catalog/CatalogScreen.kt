@@ -1,7 +1,6 @@
 package ru.techgid.presentation.screen.catalog
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -20,9 +19,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.FilterList
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
@@ -39,18 +37,19 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import ru.techgid.domain.model.Difficulty
 import ru.techgid.domain.model.GuideListItem
-import ru.techgid.presentation.components.ActionChipButton
 import ru.techgid.presentation.components.GuideCard
+import ru.techgid.presentation.components.PrimaryButton
+import ru.techgid.domain.model.WarningSeverity
+import ru.techgid.presentation.components.WarningBlock
 import ru.techgid.presentation.theme.TechGidTheme
 
 /**
- * Экран каталога / поиска инструкций.
- *
- * Референс: поиск + фильтры-чипы + карточки инструкций.
- * Внизу: кнопки "Найти возле" и "Повернуть камеру".
+ * Экран каталога инструкций.
+ * Поиск, фильтры, карточки, предупреждения, кнопка "Предложить инструкцию".
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -60,7 +59,6 @@ fun CatalogScreen(
     onBack: () -> Unit,
 ) {
     var searchQuery by remember { mutableStateOf("") }
-    var selectedDifficulty by remember { mutableStateOf<Difficulty?>(null) }
     var selectedCategory by remember { mutableStateOf("All") }
 
     // Демо-данные
@@ -76,7 +74,8 @@ fun CatalogScreen(
                 viewsCount = 1240,
                 rating = 4.2f,
                 ratingCount = 18,
-                componentName = "Топливная система",
+                componentName = "Насосит · Средняя",
+                authorName = "Алексей",
             ),
             GuideListItem(
                 id = 2,
@@ -85,9 +84,10 @@ fun CatalogScreen(
                 difficulty = Difficulty.MEDIUM,
                 estimatedTimeMin = 60,
                 viewsCount = 860,
-                rating = 3.8f,
+                rating = 3.0f,
                 ratingCount = 12,
-                componentName = "Топливная система",
+                componentName = "Насосит · Средняя",
+                authorName = "Дмитрий",
             ),
             GuideListItem(
                 id = 3,
@@ -100,22 +100,12 @@ fun CatalogScreen(
                 rating = 4.8f,
                 ratingCount = 92,
                 componentName = "Двигатель",
-            ),
-            GuideListItem(
-                id = 4,
-                title = "Замена тормозных колодок",
-                slug = "brake-pads",
-                difficulty = Difficulty.EASY,
-                estimatedTimeMin = 45,
-                viewsCount = 3200,
-                rating = 4.5f,
-                ratingCount = 45,
-                componentName = "Тормозная система",
+                authorName = "Олег",
             ),
         )
     }
 
-    val categories = listOf("All", "Быстрый доступ", "Средняя", "Сохранённые")
+    val categories = listOf("All", "Категория", "Сложность", "Время", "Только пров.")
 
     Column(
         modifier = Modifier
@@ -159,16 +149,16 @@ fun CatalogScreen(
                 ),
             )
             Spacer(modifier = Modifier.width(8.dp))
-            IconButton(onClick = { /* TODO: фильтры */ }) {
+            IconButton(onClick = { /* Сохранённые */ }) {
                 Icon(
-                    imageVector = Icons.Filled.Tune,
-                    contentDescription = "Фильтры",
+                    imageVector = Icons.Filled.Lock,
+                    contentDescription = "Сохранённые",
                     tint = TechGidTheme.extendedColors.iconTint,
                 )
             }
         }
 
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(10.dp))
 
         // ── Фильтры-чипы ──────────────────────────────────────
         Row(
@@ -205,52 +195,35 @@ fun CatalogScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             val filtered = demoGuides.filter { guide ->
-                (searchQuery.isBlank() || guide.title.contains(searchQuery, ignoreCase = true))
-                        && (selectedDifficulty == null || guide.difficulty == selectedDifficulty)
+                searchQuery.isBlank() || guide.title.contains(searchQuery, ignoreCase = true)
             }
+
             items(filtered, key = { it.id }) { guide ->
                 GuideCard(
                     guide = guide,
                     onClick = { onGuideClick(guide.id) },
                 )
             }
-        }
 
-        // ── Нижние кнопки действий ─────────────────────────────
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 12.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            ActionChipButton(
-                text = "Найти возле",
-                onClick = { /* TODO: 3D-навигация */ },
-                modifier = Modifier.weight(1f),
-                icon = {
-                    Icon(
-                        imageVector = Icons.Filled.Search,
-                        contentDescription = null,
-                        modifier = Modifier
-                            .size(16.dp)
-                            .padding(end = 4.dp),
-                    )
-                },
-            )
-            ActionChipButton(
-                text = "Повернуть камеру",
-                onClick = { /* TODO: 3D-камера */ },
-                modifier = Modifier.weight(1f),
-                icon = {
-                    Icon(
-                        imageVector = Icons.Filled.FilterList,
-                        contentDescription = null,
-                        modifier = Modifier
-                            .size(16.dp)
-                            .padding(end = 4.dp),
-                    )
-                },
-            )
+            // Кнопка "Предложить инструкцию"
+            item {
+                Spacer(modifier = Modifier.height(8.dp))
+                PrimaryButton(
+                    text = "Предложить инструкцию",
+                    onClick = { /* TODO */ },
+                )
+            }
+
+            // Предупреждение
+            item {
+                Spacer(modifier = Modifier.height(4.dp))
+                WarningBlock(
+                    text = "Огнеопасно: пары топлива",
+                    severity = ru.techgid.domain.model.WarningSeverity.DANGER,
+                )
+            }
+
+            item { Spacer(modifier = Modifier.height(16.dp)) }
         }
     }
 }

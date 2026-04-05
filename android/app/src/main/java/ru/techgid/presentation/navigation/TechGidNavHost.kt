@@ -26,7 +26,13 @@ fun TechGidNavHost() {
             CarSelectScreen(
                 onShowGuides = { configurationId ->
                     navController.navigate(NavRoute.Catalog.create(configurationId))
-                }
+                },
+                onCatalog = {
+                    navController.navigate(NavRoute.Catalog.create(0))
+                },
+                onDiagnostics = {
+                    navController.navigate(NavRoute.Diagnostic.create(0))
+                },
             )
         }
 

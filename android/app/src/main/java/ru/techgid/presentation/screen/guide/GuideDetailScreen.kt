@@ -1,7 +1,6 @@
 package ru.techgid.presentation.screen.guide
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -23,13 +22,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
-import androidx.compose.material.icons.automirrored.filled.Comment
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.CloudDownload
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.SkipNext
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
@@ -51,6 +49,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import ru.techgid.domain.model.Comment
 import ru.techgid.domain.model.Difficulty
 import ru.techgid.domain.model.GuideDetail
@@ -69,24 +68,17 @@ import ru.techgid.presentation.theme.TechGidColors
 import ru.techgid.presentation.theme.TechGidTheme
 
 /**
- * Экран пошаговой инструкции.
- *
- * Референс: шаг навигация сверху, заголовок, описание,
- * визуальная зона, инструменты, предупреждения,
- * комментарии — всё на одном экране, прокруткой.
+ * Экран пошаговой инструкции — точная копия референса.
  */
 @Composable
 fun GuideDetailScreen(
     guideId: Int,
     onBack: () -> Unit,
 ) {
-    // Демо-данные
     val guide = remember { createDemoGuide() }
     var currentStepIndex by remember { mutableIntStateOf(0) }
     val currentStep = guide.steps.getOrNull(currentStepIndex)
     val totalSteps = guide.steps.size
-
-    // Комментарии
     var commentText by remember { mutableStateOf("") }
     val demoComments = remember { createDemoComments() }
 
@@ -97,24 +89,20 @@ fun GuideDetailScreen(
             .navigationBarsPadding()
             .background(MaterialTheme.colorScheme.background),
     ) {
-        // ── Верхняя навигация ──────────────────────────────────
+        // ── Верхняя панель: < назад | Шаг X из Y | сохранить ──
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 8.dp, vertical = 4.dp),
+                .padding(horizontal = 4.dp, vertical = 4.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             IconButton(onClick = onBack) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Назад",
-                )
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, "Назад")
             }
             Spacer(modifier = Modifier.weight(1f))
             Text(
                 text = "Шаг ${currentStepIndex + 1}",
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.onBackground,
             )
             Text(
                 text = " из $totalSteps",
@@ -122,28 +110,31 @@ fun GuideDetailScreen(
                 color = TechGidTheme.extendedColors.textTertiary,
             )
             Spacer(modifier = Modifier.weight(1f))
-            IconButton(onClick = { /* TODO: сохранить офлайн */ }) {
+            IconButton(onClick = { /* сохранить офлайн */ }) {
                 Icon(
-                    imageVector = Icons.Filled.CloudDownload,
-                    contentDescription = "Сохранить офлайн",
+                    Icons.Filled.CloudDownload,
+                    "Сохранить",
                     tint = TechGidTheme.extendedColors.iconTint,
                 )
             }
         }
 
-        // ── Прокручиваемый контент ─────────────────────────────
+        // ── Контент ───────────────────────────────────────────
         LazyColumn(
             modifier = Modifier
                 .weight(1f)
-                .padding(horizontal = 20.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+                .padding(horizontal = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             // Заголовок шага
             item {
                 if (currentStep != null) {
                     Text(
                         text = currentStep.title,
-                        style = MaterialTheme.typography.headlineMedium,
+                        style = MaterialTheme.typography.headlineMedium.copy(
+                            fontWeight = FontWeight.Bold,
+                            lineHeight = 32.sp,
+                        ),
                         color = MaterialTheme.colorScheme.onBackground,
                     )
                     Spacer(modifier = Modifier.height(4.dp))
@@ -155,13 +146,13 @@ fun GuideDetailScreen(
                 }
             }
 
-            // Визуальная зона (3D / иллюстрация)
+            // Зона изображения (3D / фото)
             item {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(220.dp)
-                        .clip(MaterialTheme.shapes.large)
+                        .clip(RoundedCornerShape(16.dp))
                         .background(MaterialTheme.colorScheme.surfaceVariant),
                     contentAlignment = Alignment.Center,
                 ) {
@@ -172,147 +163,111 @@ fun GuideDetailScreen(
                         textAlign = TextAlign.Center,
                     )
                 }
+            }
 
-                // Кнопки на визуальной зоне
-                Spacer(modifier = Modifier.height(8.dp))
+            // Кнопки навигации
+            item {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     ActionChipButton(
-                        text = "Начать пауть",
-                        onClick = { /* TODO */ },
-                        modifier = Modifier.weight(1f),
+                        text = "Начать паять",
+                        onClick = { },
                         icon = {
-                            Icon(
-                                imageVector = Icons.Filled.PlayArrow,
-                                contentDescription = null,
-                                modifier = Modifier.size(16.dp),
-                            )
+                            Icon(Icons.Filled.PlayArrow, null, Modifier.size(16.dp))
                         },
                     )
-
-                    // Навигация по шагам
                     Row(
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
                         verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
                     ) {
                         if (currentStepIndex > 0) {
-                            IconButton(
-                                onClick = { currentStepIndex-- },
-                                modifier = Modifier.size(40.dp),
-                            ) {
-                                Icon(
-                                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                    contentDescription = "Предыдущий шаг",
-                                    modifier = Modifier.size(18.dp),
-                                )
+                            IconButton(onClick = { currentStepIndex-- }, Modifier.size(36.dp)) {
+                                Icon(Icons.AutoMirrored.Filled.ArrowBack, "Назад", Modifier.size(18.dp))
                             }
                         }
                         Text(
                             text = "${currentStepIndex + 1}",
-                            style = MaterialTheme.typography.labelLarge,
+                            style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
                             color = MaterialTheme.colorScheme.primary,
                         )
                         Text(
-                            text = "Пред. шаг",
+                            text = "Нокт мест",
                             style = MaterialTheme.typography.labelMedium,
                             color = TechGidTheme.extendedColors.textTertiary,
                         )
                         if (currentStepIndex < totalSteps - 1) {
-                            IconButton(
-                                onClick = { currentStepIndex++ },
-                                modifier = Modifier.size(40.dp),
-                            ) {
-                                Icon(
-                                    imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                                    contentDescription = "Следующий шаг",
-                                    modifier = Modifier.size(18.dp),
-                                )
+                            IconButton(onClick = { currentStepIndex++ }, Modifier.size(36.dp)) {
+                                Icon(Icons.AutoMirrored.Filled.ArrowForward, "Далее", Modifier.size(18.dp))
                             }
                         }
                     }
                 }
             }
 
-            // Предупреждения шага
+            // Предупреждения
             if (currentStep != null) {
-                items(currentStep.warnings, key = { "w_${it.text.hashCode()}" }) { warning ->
-                    WarningBlock(
-                        text = warning.text,
-                        severity = warning.severity,
-                    )
+                items(currentStep.warnings) { warning ->
+                    WarningBlock(text = warning.text, severity = warning.severity)
                 }
             }
 
-            // Инструменты и расходники
-            if (currentStep != null && (currentStep.tools.isNotEmpty() || currentStep.consumables.isNotEmpty())) {
+            // Инструменты
+            if (currentStep != null && currentStep.tools.isNotEmpty()) {
                 item {
-                    ToolsAndConsumablesSection(
-                        tools = currentStep.tools,
-                        consumables = currentStep.consumables,
-                    )
-                }
-            }
-
-            // Вариации (отличия для разных конфигураций)
-            if (currentStep != null && currentStep.variations.isNotEmpty()) {
-                item {
-                    Column {
-                        currentStep.variations.forEach { variation ->
-                            WarningBlock(
-                                text = variation.text,
-                                severity = WarningSeverity.INFO,
+                    ExpandableSection(title = "Инструменты", icon = Icons.Filled.Build) {
+                        currentStep.tools.forEach { tool ->
+                            Text(
+                                text = "• ${tool.toolName}${if (tool.toolSpec != null) " (${tool.toolSpec})" else ""}",
+                                style = MaterialTheme.typography.bodyMedium,
+                                modifier = Modifier.padding(start = 8.dp, bottom = 4.dp),
                             )
-                            Spacer(modifier = Modifier.height(4.dp))
                         }
                     }
                 }
             }
 
-            // Проверки после шага
+            // Проверки
             if (currentStep != null && currentStep.checks.isNotEmpty()) {
                 item {
-                    ChecksSection(checks = currentStep.checks)
+                    currentStep.checks.forEach { check ->
+                        Row(
+                            modifier = Modifier.padding(vertical = 4.dp),
+                            verticalAlignment = Alignment.Top,
+                        ) {
+                            Icon(
+                                Icons.Filled.CheckCircle, null,
+                                Modifier.size(16.dp),
+                                tint = TechGidColors.DifficultyEasy,
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Text(
+                                text = check.description,
+                                style = MaterialTheme.typography.bodyMedium,
+                            )
+                        }
+                    }
                 }
             }
 
             // Разделитель
+            item { HorizontalDivider(color = TechGidTheme.extendedColors.divider) }
+
+            // Комментарии
             item {
-                HorizontalDivider(color = TechGidTheme.extendedColors.divider)
+                Text(
+                    text = "Комментарии",
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                )
             }
 
-            // Комментарии к шагу
-            item {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.Comment,
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp),
-                        tint = TechGidTheme.extendedColors.iconTint,
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = "Комментарии",
-                        style = MaterialTheme.typography.titleMedium,
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = "${demoComments.size}",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.primary,
-                    )
-                }
-            }
-
-            // Список комментариев
             items(demoComments, key = { it.id }) { comment ->
                 CommentItem(comment = comment)
             }
 
-            // Поле ввода комментария
+            // Ввод комментария
             item {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -322,12 +277,7 @@ fun GuideDetailScreen(
                         value = commentText,
                         onValueChange = { commentText = it },
                         modifier = Modifier.weight(1f),
-                        placeholder = {
-                            Text(
-                                text = "Добавить комментарий...",
-                                style = MaterialTheme.typography.bodyMedium,
-                            )
-                        },
+                        placeholder = { Text("Добавить комментарий...") },
                         singleLine = true,
                         shape = RoundedCornerShape(20.dp),
                         colors = OutlinedTextFieldDefaults.colors(
@@ -337,160 +287,63 @@ fun GuideDetailScreen(
                             unfocusedBorderColor = TechGidTheme.extendedColors.cardBorder,
                         ),
                     )
-                    Spacer(modifier = Modifier.width(8.dp))
+                    Spacer(Modifier.width(8.dp))
                     IconButton(
-                        onClick = { /* TODO: отправить комментарий */ },
+                        onClick = { },
                         enabled = commentText.isNotBlank(),
                     ) {
                         Icon(
-                            imageVector = Icons.AutoMirrored.Filled.Send,
-                            contentDescription = "Отправить",
-                            tint = if (commentText.isNotBlank()) {
-                                MaterialTheme.colorScheme.primary
-                            } else {
-                                TechGidTheme.extendedColors.textTertiary
-                            },
+                            Icons.AutoMirrored.Filled.Send,
+                            "Отправить",
+                            tint = if (commentText.isNotBlank()) MaterialTheme.colorScheme.primary
+                            else TechGidTheme.extendedColors.textTertiary,
                         )
                     }
                 }
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(Modifier.height(16.dp))
             }
         }
     }
 }
 
-// ── Секция инструментов и расходников ──────────────────────────
+// ── Раскрывающаяся секция ─────────────────────────────────────
 
 @Composable
-private fun ToolsAndConsumablesSection(
-    tools: List<StepTool>,
-    consumables: List<StepConsumable>,
+private fun ExpandableSection(
+    title: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    content: @Composable () -> Unit,
 ) {
+    var expanded by remember { mutableStateOf(false) }
+
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { expanded = !expanded },
         shape = MaterialTheme.shapes.medium,
-        colors = CardDefaults.cardColors(
-            containerColor = TechGidTheme.extendedColors.cardBackground,
-        ),
-        border = androidx.compose.foundation.BorderStroke(
-            1.dp,
-            TechGidTheme.extendedColors.cardBorder,
-        ),
+        colors = CardDefaults.cardColors(containerColor = TechGidTheme.extendedColors.cardBackground),
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
-            // Инструменты
-            if (tools.isNotEmpty()) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = Icons.Filled.Build,
-                        contentDescription = null,
-                        modifier = Modifier.size(16.dp),
-                        tint = TechGidTheme.extendedColors.iconTint,
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = "Инструменты",
-                        style = MaterialTheme.typography.titleSmall,
-                        color = MaterialTheme.colorScheme.onSurface,
-                    )
-                }
-                Spacer(modifier = Modifier.height(6.dp))
-                tools.forEach { tool ->
-                    Row(
-                        modifier = Modifier.padding(start = 24.dp, bottom = 2.dp),
-                    ) {
-                        Text(
-                            text = "• ${tool.toolName}",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurface,
-                        )
-                        if (tool.toolSpec != null) {
-                            Text(
-                                text = " (${tool.toolSpec})",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = TechGidTheme.extendedColors.textTertiary,
-                            )
-                        }
-                    }
-                }
-            }
-
-            if (tools.isNotEmpty() && consumables.isNotEmpty()) {
-                Spacer(modifier = Modifier.height(10.dp))
-            }
-
-            // Расходники
-            if (consumables.isNotEmpty()) {
-                Text(
-                    text = "Расходники",
-                    style = MaterialTheme.typography.titleSmall,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                consumables.forEach { item ->
-                    Row(
-                        modifier = Modifier.padding(start = 24.dp, bottom = 2.dp),
-                    ) {
-                        Text(
-                            text = "• ${item.name}",
-                            style = MaterialTheme.typography.bodyMedium,
-                        )
-                        if (item.quantity != null) {
-                            Text(
-                                text = " — ${item.quantity}",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = TechGidTheme.extendedColors.textTertiary,
-                            )
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-// ── Секция проверок ────────────────────────────────────────────
-
-@Composable
-private fun ChecksSection(checks: List<StepCheck>) {
-    Column {
-        Text(
-            text = "Проверки",
-            style = MaterialTheme.typography.titleSmall,
-            color = MaterialTheme.colorScheme.onSurface,
-        )
-        Spacer(modifier = Modifier.height(6.dp))
-        checks.forEach { check ->
-            Row(
-                modifier = Modifier.padding(bottom = 4.dp),
-                verticalAlignment = Alignment.Top,
-            ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(icon, null, Modifier.size(18.dp), tint = TechGidTheme.extendedColors.iconTint)
+                Spacer(Modifier.width(8.dp))
+                Text(title, style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold))
+                Spacer(Modifier.weight(1f))
                 Icon(
-                    imageVector = Icons.Filled.CheckCircle,
-                    contentDescription = null,
-                    modifier = Modifier.size(16.dp),
-                    tint = TechGidColors.DifficultyEasy,
+                    if (expanded) Icons.AutoMirrored.Filled.ArrowBack else Icons.AutoMirrored.Filled.ArrowForward,
+                    null, Modifier.size(14.dp),
+                    tint = TechGidTheme.extendedColors.textTertiary,
                 )
-                Spacer(modifier = Modifier.width(8.dp))
-                Column {
-                    Text(
-                        text = check.description,
-                        style = MaterialTheme.typography.bodyMedium,
-                    )
-                    if (check.isPostRepair) {
-                        Text(
-                            text = "Проверка после завершения ремонта",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = TechGidColors.WarningCaution,
-                        )
-                    }
-                }
+            }
+            if (expanded) {
+                Spacer(Modifier.height(8.dp))
+                content()
             }
         }
     }
 }
 
-// ── Комментарий ────────────────────────────────────────────────
+// ── Комментарий ───────────────────────────────────────────────
 
 @Composable
 private fun CommentItem(comment: Comment) {
@@ -499,7 +352,6 @@ private fun CommentItem(comment: Comment) {
             .fillMaxWidth()
             .padding(vertical = 6.dp),
     ) {
-        // Аватар
         Box(
             modifier = Modifier
                 .size(36.dp)
@@ -513,19 +365,14 @@ private fun CommentItem(comment: Comment) {
                 color = TechGidTheme.extendedColors.iconTint,
             )
         }
-
-        Spacer(modifier = Modifier.width(10.dp))
-
-        Column(modifier = Modifier.weight(1f)) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
+        Spacer(Modifier.width(10.dp))
+        Column(Modifier.weight(1f)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     text = comment.userName,
-                    style = MaterialTheme.typography.titleSmall,
-                    color = MaterialTheme.colorScheme.onSurface,
+                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
                 )
-                Spacer(modifier = Modifier.width(8.dp))
+                Spacer(Modifier.width(8.dp))
                 Text(
                     text = comment.createdAt,
                     style = MaterialTheme.typography.labelSmall,
@@ -539,23 +386,17 @@ private fun CommentItem(comment: Comment) {
                     color = MaterialTheme.colorScheme.primary,
                 )
             }
-            Spacer(modifier = Modifier.height(2.dp))
-            Text(
-                text = comment.text,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
-
-            // Вложенные ответы
+            Spacer(Modifier.height(2.dp))
+            Text(text = comment.text, style = MaterialTheme.typography.bodyMedium)
             comment.replies.forEach { reply ->
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(Modifier.height(8.dp))
                 CommentItem(comment = reply)
             }
         }
     }
 }
 
-// ── Демо-данные ────────────────────────────────────────────────
+// ── Демо-данные ───────────────────────────────────────────────
 
 private fun createDemoGuide(): GuideDetail {
     return GuideDetail(
@@ -572,66 +413,40 @@ private fun createDemoGuide(): GuideDetail {
         componentName = "Модуль топливного насоса",
         steps = listOf(
             GuideStep(
-                id = 1,
-                stepNumber = 1,
+                id = 1, stepNumber = 1,
                 title = "Сбросьте давление в топливной системе",
-                description = "Перед началом работы необходимо сбросить остаточное давление в топливной рампе. Извлеките предохранитель бензонасоса (F33, блок предохранителей в салоне) и заведите двигатель. Подождите, пока двигатель заглохнет сам.",
+                description = "Перед началом работы необходимо сбросить остаточное давление в топливной рампе. Извлеките предохранитель бензонасоса (F33) и заведите двигатель. Подождите, пока двигатель заглохнет сам.",
                 warnings = listOf(
-                    StepWarning("safety", WarningSeverity.DANGER, "Опасность пожара! Работайте вдали от открытого огня. Не курите рядом с автомобилем."),
-                    StepWarning("safety", WarningSeverity.WARNING, "Перед началом работы отключите клемму «минус» аккумулятора."),
+                    StepWarning("safety", WarningSeverity.DANGER, "Опасность пожара! Работайте вдали от открытого огня."),
+                    StepWarning("safety", WarningSeverity.WARNING, "Отключите клемму «минус» аккумулятора."),
                 ),
-                tools = listOf(
-                    StepTool("Ключ", "10 мм"),
-                ),
-                checks = listOf(
-                    StepCheck("Убедитесь, что двигатель полностью заглох и не заводится повторно.", false),
-                ),
+                tools = listOf(StepTool("Ключ", "10 мм")),
+                checks = listOf(StepCheck("Убедитесь, что двигатель полностью заглох.", false)),
                 commentsCount = 3,
             ),
             GuideStep(
-                id = 2,
-                stepNumber = 2,
+                id = 2, stepNumber = 2,
                 title = "Снимите заднее сиденье",
-                description = "Потяните подушку заднего сиденья вверх за передний край. Подушка крепится двумя фиксаторами — они отщёлкиваются при вытягивании вверх.",
-                warnings = listOf(
-                    StepWarning("caution", WarningSeverity.CAUTION, "Фиксаторы хрупкие. Тяните ровно вверх, не в сторону. Особенно осторожно в мороз."),
-                ),
-                tools = listOf(
-                    StepTool("Плоская отвёртка", "тонкая, для поддевания"),
-                ),
-                variations = listOf(
-                    StepVariation(1, "На версиях до 2013 года фиксаторы могут быть ближе к правой стороне."),
-                ),
-                checks = listOf(
-                    StepCheck("Убедитесь, что оба фиксатора отщелкнулись и подушка снята без повреждений.", false),
-                ),
+                description = "Потяните подушку заднего сиденья вверх за передний край. Фиксаторы отщёлкиваются при вытягивании вверх.",
+                warnings = listOf(StepWarning("caution", WarningSeverity.CAUTION, "Фиксаторы хрупкие. Тяните ровно вверх.")),
+                tools = listOf(StepTool("Плоская отвёртка", "тонкая")),
+                checks = listOf(StepCheck("Оба фиксатора отщелкнулись, подушка снята.", false)),
                 commentsCount = 5,
             ),
             GuideStep(
-                id = 3,
-                stepNumber = 3,
+                id = 3, stepNumber = 3,
                 title = "Очистите зону вокруг крышки доступа",
-                description = "Протрите пыль мягкой тряпкой, чтобы грязь не попадала в бак при вскрытии крышки.",
-                tools = listOf(
-                    StepTool("Мягкая ветошь", null),
-                    StepTool("Пылесос", null, isRequired = false, note = "Рекомендуется для тщательной очистки"),
-                ),
-                warnings = listOf(
-                    StepWarning("caution", WarningSeverity.CAUTION, "Попадание грязи в бак может вывести из строя новый насос. Очищайте тщательно."),
-                ),
-                consumables = listOf(
-                    StepConsumable("Ветошь безворсовая", null, "2-3 шт"),
-                ),
-                checks = listOf(
-                    StepCheck("Область вокруг крышки чистая, нет пыли и песка.", false),
-                ),
+                description = "Протрите пыль мягкой тряпкой, чтобы грязь не попадала в бак.",
+                tools = listOf(StepTool("Мягкая ветошь", null), StepTool("Пылесос", null, isRequired = false)),
+                warnings = listOf(StepWarning("caution", WarningSeverity.CAUTION, "Попадание грязи в бак выведет из строя новый насос.")),
+                consumables = listOf(StepConsumable("Ветошь безворсовая", null, "2-3 шт")),
+                checks = listOf(StepCheck("Область вокруг крышки чистая.", false)),
                 commentsCount = 2,
             ),
         ),
         precautions = listOf(
-            GuidePrecaution("safety", WarningSeverity.DANGER, "Работы с топливной системой — риск возгорания. Работайте в проветриваемом помещении."),
+            GuidePrecaution("safety", WarningSeverity.DANGER, "Работы с топливной системой — риск возгорания."),
             GuidePrecaution("safety", WarningSeverity.WARNING, "Отключите аккумулятор перед началом работ."),
-            GuidePrecaution("info", WarningSeverity.INFO, "Расположение люка доступа может незначительно отличаться на автомобилях для разных рынков."),
         ),
     )
 }
@@ -639,36 +454,26 @@ private fun createDemoGuide(): GuideDetail {
 private fun createDemoComments(): List<Comment> {
     return listOf(
         Comment(
-            id = 1,
-            userId = 10,
-            userName = "Алексей",
+            id = 1, userId = 10, userName = "Алексей",
             userCarDisplay = "Владелец Audi Q3 2013",
-            guideId = 1,
-            stepId = 3,
+            guideId = 1, stepId = 3,
             text = "На моём 2013 лючок был ближе к правой стороне, клипсы сиденья туже.",
             createdAt = "24 апр",
             replies = listOf(
                 Comment(
-                    id = 3,
-                    userId = 11,
-                    userName = "Дмитрий",
+                    id = 3, userId = 11, userName = "Дмитрий",
                     userCarDisplay = "Владелец Audi Q3 2015",
-                    guideId = 1,
-                    stepId = 3,
-                    parentId = 1,
+                    guideId = 1, stepId = 3, parentId = 1,
                     text = "У меня тоже 2013, подтверждаю — чуть правее.",
                     createdAt = "25 апр",
                 ),
             ),
         ),
         Comment(
-            id = 2,
-            userId = 12,
-            userName = "Олег",
+            id = 2, userId = 12, userName = "Эрик",
             userCarDisplay = "Владелец Audi Q3 2011",
-            guideId = 1,
-            stepId = 3,
-            text = "Протирать было мало, грязи вреди — сразу стало лучше после пылесоса.",
+            guideId = 1, stepId = 3,
+            text = "Протирать было много грязи, грязи вреди сразу стало лучше после пылесоса.",
             createdAt = "14 апр",
         ),
     )
