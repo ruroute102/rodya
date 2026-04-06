@@ -1,7 +1,7 @@
 package ru.techgid.presentation.screen.profile
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -33,29 +33,25 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import ru.techgid.presentation.theme.TechGidTheme
 
-/**
- * Экран профиля / личного кабинета.
- * Автомобили, комментарии, офлайн-данные, роль, настройки.
- */
 @Composable
 fun ProfileScreen(
+    viewModel: ProfileViewModel = hiltViewModel(),
     onLogout: () -> Unit = {},
     onEditProfile: () -> Unit = {},
+    onLogin: () -> Unit = {},
 ) {
-    // Демо
-    val userName = "Алексей Петров"
-    val userPhone = "+7 900 123-45-67"
-    val userRole = "Пользователь"
-    val userCar = "Audi Q3 2011 · 2.0 TFSI"
-    val offlineCount = 3
-    val commentsCount = 12
+    val state by viewModel.uiState.collectAsState()
 
     Column(
         modifier = Modifier
@@ -66,7 +62,7 @@ fun ProfileScreen(
     ) {
         Spacer(modifier = Modifier.height(24.dp))
 
-        // ── Аватар и имя ───────────────────────────────────────
+        // Avatar + Name
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -90,91 +86,118 @@ fun ProfileScreen(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            if (state.isLoggedIn) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = state.userName.ifBlank { "Пользователь" },
+                        style = MaterialTheme.typography.headlineSmall,
+                        color = MaterialTheme.colorScheme.onBackground,
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    IconButton(onClick = onEditProfile, modifier = Modifier.size(24.dp)) {
+                        Icon(
+                            imageVector = Icons.Filled.Edit,
+                            contentDescription = "Редактировать",
+                            modifier = Modifier.size(16.dp),
+                            tint = TechGidTheme.extendedColors.iconTint,
+                        )
+                    }
+                }
+
                 Text(
-                    text = userName,
+                    text = state.userPhone.ifBlank { "" },
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = TechGidTheme.extendedColors.textTertiary,
+                )
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                Text(
+                    text = state.userRole.ifBlank { "Пользователь" },
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+            } else {
+                Text(
+                    text = "Гость",
                     style = MaterialTheme.typography.headlineSmall,
                     color = MaterialTheme.colorScheme.onBackground,
                 )
-                Spacer(modifier = Modifier.width(8.dp))
-                IconButton(onClick = onEditProfile, modifier = Modifier.size(24.dp)) {
-                    Icon(
-                        imageVector = Icons.Filled.Edit,
-                        contentDescription = "Редактировать",
-                        modifier = Modifier.size(16.dp),
-                        tint = TechGidTheme.extendedColors.iconTint,
-                    )
-                }
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "Войдите, чтобы сохранять инструкции\nи оставлять комментарии",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = TechGidTheme.extendedColors.textTertiary,
+                )
             }
-
-            Text(
-                text = userPhone,
-                style = MaterialTheme.typography.bodyMedium,
-                color = TechGidTheme.extendedColors.textTertiary,
-            )
-
-            Spacer(modifier = Modifier.height(4.dp))
-
-            Text(
-                text = userRole,
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.primary,
-            )
         }
 
         Spacer(modifier = Modifier.height(28.dp))
 
-        // ── Мой автомобиль ─────────────────────────────────────
+        // My car
         ProfileSection(title = "Мой автомобиль") {
             ProfileInfoRow(
                 icon = Icons.Filled.DirectionsCar,
-                label = userCar,
-                trailingText = "основной",
+                label = state.userCar.ifBlank { "Не выбран" },
+                trailingText = if (state.userCar.isNotBlank()) "основной" else null,
             )
         }
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // ── Активность ─────────────────────────────────────────
+        // Activity
         ProfileSection(title = "Активность") {
             ProfileInfoRow(
                 icon = Icons.AutoMirrored.Filled.Comment,
                 label = "Мои комментарии",
-                trailingText = "$commentsCount",
+                trailingText = "${state.commentsCount}",
             )
             HorizontalDivider(color = TechGidTheme.extendedColors.divider)
             ProfileInfoRow(
                 icon = Icons.Filled.Star,
                 label = "Мои оценки",
-                trailingText = "5",
+                trailingText = "0",
             )
         }
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // ── Офлайн-данные ──────────────────────────────────────
+        // Offline data
         ProfileSection(title = "Офлайн-данные") {
             ProfileInfoRow(
                 icon = Icons.Filled.CloudDownload,
                 label = "Сохранённые инструкции",
-                trailingText = "$offlineCount",
+                trailingText = "${state.offlineCount}",
             )
         }
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // ── Настройки ──────────────────────────────────────────
+        // Settings
         ProfileSection(title = "Настройки") {
             ProfileInfoRow(
                 icon = Icons.Filled.Settings,
                 label = "Настройки приложения",
             )
             HorizontalDivider(color = TechGidTheme.extendedColors.divider)
-            ProfileInfoRow(
-                icon = Icons.AutoMirrored.Filled.ExitToApp,
-                label = "Выйти",
-                tintColor = MaterialTheme.colorScheme.error,
-            )
+            if (state.isLoggedIn) {
+                ProfileInfoRow(
+                    icon = Icons.AutoMirrored.Filled.ExitToApp,
+                    label = "Выйти",
+                    tintColor = MaterialTheme.colorScheme.error,
+                    onClick = {
+                        viewModel.logout()
+                        onLogout()
+                    },
+                )
+            } else {
+                ProfileInfoRow(
+                    icon = Icons.Filled.Person,
+                    label = "Войти в аккаунт",
+                    tintColor = MaterialTheme.colorScheme.primary,
+                    onClick = onLogin,
+                )
+            }
         }
 
         Spacer(modifier = Modifier.height(32.dp))
@@ -211,11 +234,13 @@ private fun ProfileInfoRow(
     icon: ImageVector,
     label: String,
     trailingText: String? = null,
-    tintColor: androidx.compose.ui.graphics.Color = TechGidTheme.extendedColors.iconTint,
+    tintColor: Color = TechGidTheme.extendedColors.iconTint,
+    onClick: (() -> Unit)? = null,
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
             .padding(horizontal = 16.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -231,6 +256,8 @@ private fun ProfileInfoRow(
             style = MaterialTheme.typography.bodyLarge,
             color = if (tintColor == MaterialTheme.colorScheme.error) {
                 MaterialTheme.colorScheme.error
+            } else if (tintColor == MaterialTheme.colorScheme.primary) {
+                MaterialTheme.colorScheme.primary
             } else {
                 MaterialTheme.colorScheme.onSurface
             },

@@ -6,9 +6,11 @@ import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import ru.techgid.data.repository.AuthRepositoryImpl
 import ru.techgid.data.repository.CarRepositoryImpl
+import ru.techgid.data.repository.DiagnosticRepositoryImpl
 import ru.techgid.data.repository.GuideRepositoryImpl
 import ru.techgid.domain.repository.AuthRepository
 import ru.techgid.domain.repository.CarRepository
+import ru.techgid.domain.repository.DiagnosticRepository
 import ru.techgid.domain.repository.GuideRepository
 import javax.inject.Singleton
 
@@ -27,4 +29,8 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindAuthRepository(impl: AuthRepositoryImpl): AuthRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindDiagnosticRepository(impl: DiagnosticRepositoryImpl): DiagnosticRepository
 }

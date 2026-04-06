@@ -3,6 +3,7 @@ package ru.techgid.presentation.screen.catalog
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -19,8 +20,10 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
@@ -31,81 +34,28 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import ru.techgid.domain.model.Difficulty
-import ru.techgid.domain.model.GuideListItem
+import ru.techgid.domain.model.WarningSeverity
 import ru.techgid.presentation.components.GuideCard
 import ru.techgid.presentation.components.PrimaryButton
-import ru.techgid.domain.model.WarningSeverity
 import ru.techgid.presentation.components.WarningBlock
 import ru.techgid.presentation.theme.TechGidTheme
 
-/**
- * Экран каталога инструкций.
- * Поиск, фильтры, карточки, предупреждения, кнопка "Предложить инструкцию".
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CatalogScreen(
     configurationId: Int,
+    viewModel: CatalogViewModel = hiltViewModel(),
     onGuideClick: (guideId: Int) -> Unit,
     onBack: () -> Unit,
 ) {
-    var searchQuery by remember { mutableStateOf("") }
-    var selectedCategory by remember { mutableStateOf("All") }
-
-    // Демо-данные
-    val demoGuides = remember {
-        listOf(
-            GuideListItem(
-                id = 1,
-                title = "Модуль топливного насоса (в баке)",
-                slug = "fuel-pump-module",
-                difficulty = Difficulty.MEDIUM,
-                estimatedTimeMin = 90,
-                isVerified = true,
-                viewsCount = 1240,
-                rating = 4.2f,
-                ratingCount = 18,
-                componentName = "Насосит · Средняя",
-                authorName = "Алексей",
-            ),
-            GuideListItem(
-                id = 2,
-                title = "Насос низкого давления",
-                slug = "low-pressure-pump",
-                difficulty = Difficulty.MEDIUM,
-                estimatedTimeMin = 60,
-                viewsCount = 860,
-                rating = 3.0f,
-                ratingCount = 12,
-                componentName = "Насосит · Средняя",
-                authorName = "Дмитрий",
-            ),
-            GuideListItem(
-                id = 3,
-                title = "Замена масла и фильтра",
-                slug = "oil-change",
-                difficulty = Difficulty.EASY,
-                estimatedTimeMin = 30,
-                isVerified = true,
-                viewsCount = 5600,
-                rating = 4.8f,
-                ratingCount = 92,
-                componentName = "Двигатель",
-                authorName = "Олег",
-            ),
-        )
-    }
-
-    val categories = listOf("All", "Категория", "Сложность", "Время", "Только пров.")
+    val state by viewModel.uiState.collectAsState()
 
     Column(
         modifier = Modifier
@@ -113,9 +63,28 @@ fun CatalogScreen(
             .statusBarsPadding()
             .background(MaterialTheme.colorScheme.background),
     ) {
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(4.dp))
 
-        // ── Поиск ──────────────────────────────────────────────
+        // Back button + Title
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            IconButton(onClick = onBack) {
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, "Назад")
+            }
+            Text(
+                text = "Каталог инструкций",
+                style = MaterialTheme.typography.titleLarge,
+                modifier = Modifier.weight(1f),
+            )
+        }
+
+        Spacer(modifier = Modifier.height(4.dp))
+
+        // Search
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -123,12 +92,12 @@ fun CatalogScreen(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             OutlinedTextField(
-                value = searchQuery,
-                onValueChange = { searchQuery = it },
+                value = state.searchQuery,
+                onValueChange = { viewModel.search(it) },
                 modifier = Modifier.weight(1f),
                 placeholder = {
                     Text(
-                        text = "Поиск...",
+                        text = "Поиск инструкции...",
                         style = MaterialTheme.typography.bodyLarge,
                     )
                 },
@@ -160,7 +129,7 @@ fun CatalogScreen(
 
         Spacer(modifier = Modifier.height(10.dp))
 
-        // ── Фильтры-чипы ──────────────────────────────────────
+        // Filter chips
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -168,16 +137,20 @@ fun CatalogScreen(
                 .padding(horizontal = 16.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            categories.forEach { category ->
+            FilterChip(
+                selected = state.selectedDifficulty == null,
+                onClick = { viewModel.setDifficulty(null) },
+                label = { Text("Все", style = MaterialTheme.typography.labelMedium) },
+                colors = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
+                    selectedLabelColor = MaterialTheme.colorScheme.primary,
+                ),
+            )
+            Difficulty.entries.forEach { difficulty ->
                 FilterChip(
-                    selected = selectedCategory == category,
-                    onClick = { selectedCategory = category },
-                    label = {
-                        Text(
-                            text = category,
-                            style = MaterialTheme.typography.labelMedium,
-                        )
-                    },
+                    selected = state.selectedDifficulty == difficulty,
+                    onClick = { viewModel.setDifficulty(difficulty) },
+                    label = { Text(difficulty.label, style = MaterialTheme.typography.labelMedium) },
                     colors = FilterChipDefaults.filterChipColors(
                         selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
                         selectedLabelColor = MaterialTheme.colorScheme.primary,
@@ -188,42 +161,56 @@ fun CatalogScreen(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        // ── Список карточек ────────────────────────────────────
-        LazyColumn(
-            modifier = Modifier.weight(1f),
-            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            val filtered = demoGuides.filter { guide ->
-                searchQuery.isBlank() || guide.title.contains(searchQuery, ignoreCase = true)
+        // Guide list
+        if (state.isLoading && state.guides.isEmpty()) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center,
+            ) {
+                CircularProgressIndicator()
             }
-
-            items(filtered, key = { it.id }) { guide ->
-                GuideCard(
-                    guide = guide,
-                    onClick = { onGuideClick(guide.id) },
+        } else if (state.guides.isEmpty()) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    text = "Инструкции не найдены",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = TechGidTheme.extendedColors.textTertiary,
                 )
             }
+        } else {
+            LazyColumn(
+                modifier = Modifier.weight(1f),
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                items(state.guides, key = { it.id }) { guide ->
+                    GuideCard(
+                        guide = guide,
+                        onClick = { onGuideClick(guide.id) },
+                    )
+                }
 
-            // Кнопка "Предложить инструкцию"
-            item {
-                Spacer(modifier = Modifier.height(8.dp))
-                PrimaryButton(
-                    text = "Предложить инструкцию",
-                    onClick = { /* TODO */ },
-                )
+                item {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    PrimaryButton(
+                        text = "Предложить инструкцию",
+                        onClick = { /* TODO */ },
+                    )
+                }
+
+                item {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    WarningBlock(
+                        text = "Все инструкции проходят модерацию. Следуйте технике безопасности.",
+                        severity = WarningSeverity.INFO,
+                    )
+                }
+
+                item { Spacer(modifier = Modifier.height(16.dp)) }
             }
-
-            // Предупреждение
-            item {
-                Spacer(modifier = Modifier.height(4.dp))
-                WarningBlock(
-                    text = "Огнеопасно: пары топлива",
-                    severity = ru.techgid.domain.model.WarningSeverity.DANGER,
-                )
-            }
-
-            item { Spacer(modifier = Modifier.height(16.dp)) }
         }
     }
 }

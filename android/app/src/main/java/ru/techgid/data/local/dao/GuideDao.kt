@@ -28,6 +28,9 @@ interface GuideDao {
     @Query("SELECT COUNT(*) FROM offline_guides WHERE configuration_id = :configurationId")
     suspend fun getOfflineCount(configurationId: Int): Int
 
+    @Query("SELECT COUNT(*) FROM offline_guides")
+    suspend fun getOfflineCount(): Int
+
     @Query("SELECT SUM(length(json_data)) FROM offline_guides WHERE configuration_id = :configurationId")
     suspend fun getOfflineSize(configurationId: Int): Long?
 }

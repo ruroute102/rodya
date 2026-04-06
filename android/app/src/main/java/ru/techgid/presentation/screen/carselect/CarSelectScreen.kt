@@ -21,6 +21,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.HealthAndSafety
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -29,6 +30,7 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -40,71 +42,21 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import ru.techgid.domain.model.CarBrand
-import ru.techgid.domain.model.CarEngine
-import ru.techgid.domain.model.CarGeneration
-import ru.techgid.domain.model.CarModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import ru.techgid.presentation.components.CarSelectorItem
 import ru.techgid.presentation.components.PrimaryButton
 import ru.techgid.presentation.theme.TechGidTheme
 
-/**
- * Главный экран — выбор автомобиля.
- * Точная копия референса: заголовок, 4 селектора, изображение авто,
- * кнопка "Продолжить", пункты меню "Каталог работ" и "Формы диагностики".
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CarSelectScreen(
+    viewModel: CarSelectViewModel = hiltViewModel(),
     onShowGuides: (configurationId: Int) -> Unit,
     onCatalog: () -> Unit = {},
     onDiagnostics: () -> Unit = {},
 ) {
-    // Состояние выбора
-    var selectedBrand by remember { mutableStateOf<CarBrand?>(null) }
-    var selectedModel by remember { mutableStateOf<CarModel?>(null) }
-    var selectedGeneration by remember { mutableStateOf<CarGeneration?>(null) }
-    var selectedEngine by remember { mutableStateOf<CarEngine?>(null) }
-
-    // Какой селектор открыт
+    val state by viewModel.uiState.collectAsState()
     var activeSelector by remember { mutableStateOf<SelectorType?>(null) }
-
-    // Демо-данные
-    val demoBrands = remember {
-        listOf(
-            CarBrand(1, "Audi", "audi", country = "Германия"),
-            CarBrand(2, "BMW", "bmw", country = "Германия"),
-            CarBrand(3, "Mercedes-Benz", "mercedes", country = "Германия"),
-            CarBrand(4, "Toyota", "toyota", country = "Япония"),
-            CarBrand(5, "Volkswagen", "volkswagen", country = "Германия"),
-            CarBrand(6, "Kia", "kia", country = "Южная Корея"),
-            CarBrand(7, "Hyundai", "hyundai", country = "Южная Корея"),
-            CarBrand(8, "Lada", "lada", country = "Россия"),
-        )
-    }
-    val demoModels = remember {
-        listOf(
-            CarModel(1, 1, "Q3", "q3"),
-            CarModel(2, 1, "Q5", "q5"),
-            CarModel(3, 1, "A4", "a4"),
-            CarModel(4, 1, "A6", "a6"),
-        )
-    }
-    val demoGenerations = remember {
-        listOf(
-            CarGeneration(1, 1, "8U (I поколение)", "8u", chassisCode = "8U", yearStart = 2011, yearEnd = 2018),
-            CarGeneration(2, 1, "F3 (II поколение)", "f3", chassisCode = "F3", yearStart = 2018, yearEnd = null),
-        )
-    }
-    val demoEngines = remember {
-        listOf(
-            CarEngine(1, 1, "CULB", "2.0 TFSI", "2.0 TFSI", "petrol", 211),
-            CarEngine(2, 1, "CFFB", "2.0 TDI", "2.0 TDI", "diesel", 140),
-        )
-    }
-
-    val isComplete = selectedBrand != null && selectedModel != null
-            && selectedGeneration != null && selectedEngine != null
 
     Column(
         modifier = Modifier
@@ -121,7 +73,6 @@ fun CarSelectScreen(
         ) {
             Spacer(modifier = Modifier.height(32.dp))
 
-            // ── Заголовок ─────────────────────────────────────────
             Text(
                 text = "Выберите своё авто,\nчтобы найти инструкции",
                 style = MaterialTheme.typography.headlineLarge.copy(
@@ -141,53 +92,60 @@ fun CarSelectScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // ── 4 селектора ───────────────────────────────────────
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                CarSelectorItem(
-                    label = "Марка",
-                    value = selectedBrand?.name,
-                    onClick = { activeSelector = SelectorType.BRAND },
-                )
-                CarSelectorItem(
-                    label = "Модель",
-                    value = selectedModel?.name,
-                    onClick = {
-                        if (selectedBrand != null) activeSelector = SelectorType.MODEL
-                    },
-                )
-                CarSelectorItem(
-                    label = "Год",
-                    value = selectedGeneration?.let { "${it.yearStart}" },
-                    onClick = {
-                        if (selectedModel != null) activeSelector = SelectorType.GENERATION
-                    },
-                )
-                CarSelectorItem(
-                    label = "Двигатель",
-                    value = selectedEngine?.displacementLabel ?: selectedEngine?.name,
-                    onClick = {
-                        if (selectedGeneration != null) activeSelector = SelectorType.ENGINE
-                    },
-                )
+            if (state.isLoading && state.brands.isEmpty()) {
+                Box(
+                    modifier = Modifier.fillMaxWidth().height(200.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    CircularProgressIndicator()
+                }
+            } else {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    CarSelectorItem(
+                        label = "Марка",
+                        value = state.selectedBrand?.name,
+                        onClick = { activeSelector = SelectorType.BRAND },
+                    )
+                    CarSelectorItem(
+                        label = "Модель",
+                        value = state.selectedModel?.name,
+                        onClick = {
+                            if (state.selectedBrand != null) activeSelector = SelectorType.MODEL
+                        },
+                    )
+                    CarSelectorItem(
+                        label = "Год / Поколение",
+                        value = state.selectedGeneration?.let { "${it.name} (${it.yearStart}–${it.yearEnd ?: "н.в."})" },
+                        onClick = {
+                            if (state.selectedModel != null) activeSelector = SelectorType.GENERATION
+                        },
+                    )
+                    CarSelectorItem(
+                        label = "Двигатель",
+                        value = state.selectedEngine?.let { "${it.displacementLabel ?: it.name} · ${it.powerHp ?: "?"} л.с." },
+                        onClick = {
+                            if (state.selectedGeneration != null) activeSelector = SelectorType.ENGINE
+                        },
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            // ── Зона изображения автомобиля ───────────────────────
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(180.dp)
-                    .alpha(if (selectedBrand != null) 1f else 0.5f),
+                    .alpha(if (state.selectedBrand != null) 1f else 0.5f),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
-                    text = if (isComplete) {
+                    text = if (state.isComplete) {
                         buildString {
-                            append(selectedBrand?.name ?: "")
-                            selectedModel?.let { append(" ${it.name}") }
-                            selectedGeneration?.let { append("\n${it.yearStart}") }
-                            selectedEngine?.let { append(" · ${it.displacementLabel}") }
+                            append(state.selectedBrand?.name ?: "")
+                            state.selectedModel?.let { append(" ${it.name}") }
+                            state.selectedGeneration?.let { append("\n${it.yearStart}") }
+                            state.selectedEngine?.let { append(" · ${it.displacementLabel}") }
                         }
                     } else {
                         "Здесь будет\nизображение автомобиля"
@@ -200,19 +158,14 @@ fun CarSelectScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // ── Кнопка "Продолжить" ───────────────────────────────
             PrimaryButton(
-                text = if (isComplete) "Показать инструкции" else "Продолжить",
-                onClick = {
-                    // В реальном приложении — configurationId из API
-                    onShowGuides(1)
-                },
-                enabled = isComplete,
+                text = if (state.isComplete) "Показать инструкции" else "Продолжить",
+                onClick = { onShowGuides(1) },
+                enabled = state.isComplete,
             )
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            // ── Меню: Каталог работ ───────────────────────────────
             MenuListItem(
                 icon = Icons.AutoMirrored.Filled.List,
                 text = "Каталог работ",
@@ -224,7 +177,6 @@ fun CarSelectScreen(
                 modifier = Modifier.padding(vertical = 2.dp),
             )
 
-            // ── Меню: Формы диагностики ───────────────────────────
             MenuListItem(
                 icon = Icons.Filled.HealthAndSafety,
                 text = "Формы диагностики",
@@ -235,7 +187,7 @@ fun CarSelectScreen(
         }
     }
 
-    // ── Bottom Sheet для выбора значения ───────────────────────
+    // Bottom Sheet
     if (activeSelector != null) {
         val sheetState = rememberModalBottomSheetState()
 
@@ -253,7 +205,7 @@ fun CarSelectScreen(
                     text = when (activeSelector) {
                         SelectorType.BRAND -> "Выберите марку"
                         SelectorType.MODEL -> "Выберите модель"
-                        SelectorType.GENERATION -> "Выберите год / поколение"
+                        SelectorType.GENERATION -> "Выберите поколение"
                         SelectorType.ENGINE -> "Выберите двигатель"
                         null -> ""
                     },
@@ -261,61 +213,64 @@ fun CarSelectScreen(
                     modifier = Modifier.padding(bottom = 16.dp),
                 )
 
-                when (activeSelector) {
-                    SelectorType.BRAND -> {
-                        demoBrands.forEach { brand ->
-                            SelectorListItem(
-                                text = brand.name,
-                                subtitle = brand.country,
-                                onClick = {
-                                    selectedBrand = brand
-                                    selectedModel = null
-                                    selectedGeneration = null
-                                    selectedEngine = null
-                                    activeSelector = null
-                                },
-                            )
-                        }
+                if (state.isLoading) {
+                    Box(
+                        modifier = Modifier.fillMaxWidth().height(100.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        CircularProgressIndicator()
                     }
-                    SelectorType.MODEL -> {
-                        demoModels.forEach { model ->
-                            SelectorListItem(
-                                text = model.name,
-                                onClick = {
-                                    selectedModel = model
-                                    selectedGeneration = null
-                                    selectedEngine = null
-                                    activeSelector = null
-                                },
-                            )
+                } else {
+                    when (activeSelector) {
+                        SelectorType.BRAND -> {
+                            state.brands.forEach { brand ->
+                                SelectorListItem(
+                                    text = brand.name,
+                                    subtitle = brand.country,
+                                    onClick = {
+                                        viewModel.selectBrand(brand)
+                                        activeSelector = null
+                                    },
+                                )
+                            }
                         }
-                    }
-                    SelectorType.GENERATION -> {
-                        demoGenerations.forEach { gen ->
-                            SelectorListItem(
-                                text = gen.name,
-                                subtitle = "${gen.yearStart}–${gen.yearEnd ?: "н.в."}",
-                                onClick = {
-                                    selectedGeneration = gen
-                                    selectedEngine = null
-                                    activeSelector = null
-                                },
-                            )
+                        SelectorType.MODEL -> {
+                            state.models.forEach { model ->
+                                SelectorListItem(
+                                    text = model.name,
+                                    onClick = {
+                                        viewModel.selectModel(model)
+                                        activeSelector = null
+                                    },
+                                )
+                            }
                         }
-                    }
-                    SelectorType.ENGINE -> {
-                        demoEngines.forEach { engine ->
-                            SelectorListItem(
-                                text = engine.displacementLabel ?: engine.name,
-                                subtitle = "${engine.powerHp ?: "?"} л.с. · ${engine.fuelType}",
-                                onClick = {
-                                    selectedEngine = engine
-                                    activeSelector = null
-                                },
-                            )
+                        SelectorType.GENERATION -> {
+                            state.generations.forEach { gen ->
+                                SelectorListItem(
+                                    text = gen.name,
+                                    subtitle = "${gen.yearStart}–${gen.yearEnd ?: "н.в."}",
+                                    onClick = {
+                                        viewModel.selectGeneration(gen)
+                                        activeSelector = null
+                                    },
+                                )
+                            }
                         }
+                        SelectorType.ENGINE -> {
+                            state.engines.forEach { engine ->
+                                SelectorListItem(
+                                    text = engine.displacementLabel ?: engine.name,
+                                    subtitle = "${engine.powerHp ?: "?"} л.с. · ${engine.fuelType}",
+                                    onClick = {
+                                        viewModel.selectEngine(engine)
+                                        activeSelector = null
+                                    },
+                                )
+                            }
+                        }
+                        null -> {}
                     }
-                    null -> {}
                 }
 
                 Spacer(modifier = Modifier.height(32.dp))
@@ -323,8 +278,6 @@ fun CarSelectScreen(
         }
     }
 }
-
-// ── Пункт меню (Каталог работ / Формы диагностики) ────────────
 
 @Composable
 private fun MenuListItem(

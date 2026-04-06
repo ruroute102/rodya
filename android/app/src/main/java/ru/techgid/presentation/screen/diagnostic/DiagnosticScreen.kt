@@ -4,6 +4,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -17,7 +18,6 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
@@ -26,6 +26,7 @@ import androidx.compose.material.icons.filled.RadioButtonUnchecked
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -33,93 +34,26 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import ru.techgid.domain.model.DiagnosticResult
 import ru.techgid.presentation.components.PrimaryButton
 import ru.techgid.presentation.theme.TechGidColors
 import ru.techgid.presentation.theme.TechGidTheme
 
-/**
- * Экран диагностики: выбор симптомов → результаты.
- * Пользователь не знает, что сломалось — выбирает симптомы,
- * приложение подсказывает вероятные неисправности.
- */
 @Composable
 fun DiagnosticScreen(
     configurationId: Int,
+    viewModel: DiagnosticViewModel = hiltViewModel(),
     onGuideClick: (guideId: Int) -> Unit = {},
     onBack: () -> Unit = {},
 ) {
-    var showResults by remember { mutableStateOf(false) }
-    val selectedSymptoms = remember { mutableStateListOf<Int>() }
-
-    // Демо-данные
-    val symptomCategories = remember {
-        listOf(
-            DemoSymptomCategory(1, "Двигатель", listOf(
-                DemoSymptom(1, "Не заводится"),
-                DemoSymptom(2, "Плавают обороты"),
-                DemoSymptom(3, "Троит"),
-                DemoSymptom(4, "Посторонний стук"),
-                DemoSymptom(5, "Повышенный расход топлива"),
-            )),
-            DemoSymptomCategory(2, "Топливная система", listOf(
-                DemoSymptom(6, "Запах бензина в салоне"),
-                DemoSymptom(7, "Потеря мощности"),
-                DemoSymptom(8, "Долго заводится"),
-            )),
-            DemoSymptomCategory(3, "Электрика", listOf(
-                DemoSymptom(9, "Горит Check Engine"),
-                DemoSymptom(10, "Не работают приборы"),
-                DemoSymptom(11, "Проблемы с зарядкой"),
-            )),
-        )
-    }
-
-    val demoResults = remember {
-        listOf(
-            DemoDiagnosticResult(
-                cause = "Неисправность бензонасоса",
-                probability = 0.75f,
-                componentName = "Модуль топливного насоса",
-                guideId = 1,
-                guideTitle = "Замена модуля топливного насоса",
-                checks = listOf(
-                    "Проверить давление в рампе. Норма: 4–5 бар",
-                    "Послушать работу насоса при включении зажигания",
-                    "Проверить напряжение на разъёме насоса (12В)",
-                ),
-            ),
-            DemoDiagnosticResult(
-                cause = "Засорён топливный фильтр",
-                probability = 0.45f,
-                componentName = "Топливный фильтр",
-                guideId = 2,
-                guideTitle = "Замена топливного фильтра",
-                checks = listOf(
-                    "Проверить перепад давления до и после фильтра",
-                ),
-            ),
-            DemoDiagnosticResult(
-                cause = "Неисправность датчика положения коленвала",
-                probability = 0.2f,
-                componentName = "ДПКВ",
-                guideId = null,
-                guideTitle = null,
-                checks = listOf(
-                    "Проверить сопротивление датчика (700–900 Ом)",
-                    "Проверить осциллограмму сигнала",
-                ),
-            ),
-        )
-    }
+    val state by viewModel.uiState.collectAsState()
 
     Column(
         modifier = Modifier
@@ -127,7 +61,7 @@ fun DiagnosticScreen(
             .statusBarsPadding()
             .background(MaterialTheme.colorScheme.background),
     ) {
-        // Шапка
+        // Header
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -135,7 +69,7 @@ fun DiagnosticScreen(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             IconButton(onClick = {
-                if (showResults) showResults = false else onBack()
+                if (state.showResults) viewModel.goBackToSymptoms() else onBack()
             }) {
                 Icon(Icons.AutoMirrored.Filled.ArrowBack, "Назад")
             }
@@ -148,17 +82,24 @@ fun DiagnosticScreen(
             )
             Spacer(modifier = Modifier.width(8.dp))
             Text(
-                text = if (showResults) "Результаты диагностики" else "Диагностика по симптомам",
+                text = if (state.showResults) "Результаты диагностики" else "Диагностика по симптомам",
                 style = MaterialTheme.typography.titleLarge,
             )
         }
 
-        if (!showResults) {
-            // ── Выбор симптомов ─────────────────────────────────
+        if (state.isLoading && state.symptomCategories.isEmpty()) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center,
+            ) {
+                CircularProgressIndicator()
+            }
+        } else if (!state.showResults) {
+            // Symptom selection
             LazyColumn(
                 modifier = Modifier.weight(1f),
                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 item {
                     Text(
@@ -166,9 +107,10 @@ fun DiagnosticScreen(
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
+                    Spacer(modifier = Modifier.height(8.dp))
                 }
 
-                symptomCategories.forEach { category ->
+                state.symptomCategories.forEach { category ->
                     item {
                         Text(
                             text = category.name,
@@ -179,51 +121,54 @@ fun DiagnosticScreen(
                     items(category.symptoms, key = { it.id }) { symptom ->
                         SymptomCheckItem(
                             name = symptom.name,
-                            isSelected = symptom.id in selectedSymptoms,
-                            onClick = {
-                                if (symptom.id in selectedSymptoms) {
-                                    selectedSymptoms.remove(symptom.id)
-                                } else {
-                                    selectedSymptoms.add(symptom.id)
-                                }
-                            },
+                            isSelected = symptom.id in state.selectedSymptomIds,
+                            onClick = { viewModel.toggleSymptom(symptom.id) },
                         )
                     }
+                    item { Spacer(modifier = Modifier.height(4.dp)) }
                 }
 
                 item { Spacer(modifier = Modifier.height(16.dp)) }
             }
 
-            // Кнопка диагностики
             PrimaryButton(
-                text = "Диагностировать (${selectedSymptoms.size})",
-                onClick = { showResults = true },
-                enabled = selectedSymptoms.isNotEmpty(),
+                text = "Диагностировать (${state.selectedSymptomIds.size})",
+                onClick = { viewModel.diagnose() },
+                enabled = state.selectedSymptomIds.isNotEmpty() && !state.isLoading,
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
             )
         } else {
-            // ── Результаты ─────────────────────────────────────
-            LazyColumn(
-                modifier = Modifier.weight(1f),
-                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                item {
-                    Text(
-                        text = "Вероятные неисправности, отсортированные по вероятности:",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
+            // Results
+            if (state.isLoading) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    CircularProgressIndicator()
                 }
+            } else {
+                LazyColumn(
+                    modifier = Modifier.weight(1f),
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    item {
+                        Text(
+                            text = "Вероятные неисправности, отсортированные по вероятности:",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
 
-                items(demoResults) { result ->
-                    DiagnosticResultCard(
-                        result = result,
-                        onGuideClick = { guideId -> onGuideClick(guideId) },
-                    )
+                    items(state.results) { result ->
+                        DiagnosticResultCard(
+                            result = result,
+                            onGuideClick = { guideId -> onGuideClick(guideId) },
+                        )
+                    }
+
+                    item { Spacer(modifier = Modifier.height(16.dp)) }
                 }
-
-                item { Spacer(modifier = Modifier.height(16.dp)) }
             }
         }
     }
@@ -259,7 +204,7 @@ private fun SymptomCheckItem(
 
 @Composable
 private fun DiagnosticResultCard(
-    result: DemoDiagnosticResult,
+    result: DiagnosticResult,
     onGuideClick: (Int) -> Unit,
 ) {
     Card(
@@ -272,7 +217,6 @@ private fun DiagnosticResultCard(
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            // Причина + вероятность
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -306,7 +250,6 @@ private fun DiagnosticResultCard(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Индикатор вероятности
             LinearProgressIndicator(
                 progress = { result.probability },
                 modifier = Modifier
@@ -320,7 +263,6 @@ private fun DiagnosticResultCard(
                 trackColor = TechGidTheme.extendedColors.divider,
             )
 
-            // Проверки
             if (result.checks.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(12.dp))
                 Text(
@@ -339,7 +281,6 @@ private fun DiagnosticResultCard(
                 }
             }
 
-            // Ссылка на инструкцию
             if (result.guideId != null && result.guideTitle != null) {
                 Spacer(modifier = Modifier.height(10.dp))
                 HorizontalDivider(color = TechGidTheme.extendedColors.divider)
@@ -368,22 +309,3 @@ private fun DiagnosticResultCard(
         }
     }
 }
-
-// ── Демо-модели ────────────────────────────────────────────────
-
-private data class DemoSymptomCategory(
-    val id: Int,
-    val name: String,
-    val symptoms: List<DemoSymptom>,
-)
-
-private data class DemoSymptom(val id: Int, val name: String)
-
-private data class DemoDiagnosticResult(
-    val cause: String,
-    val probability: Float,
-    val componentName: String? = null,
-    val guideId: Int? = null,
-    val guideTitle: String? = null,
-    val checks: List<String> = emptyList(),
-)
