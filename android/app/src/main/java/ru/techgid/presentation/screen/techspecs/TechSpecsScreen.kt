@@ -19,11 +19,11 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Bolt
-import androidx.compose.material.icons.filled.Compress
-import androidx.compose.material.icons.filled.OilBarrel
+import androidx.compose.material.icons.filled.Build
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Speed
-import androidx.compose.material.icons.filled.Straighten
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -65,7 +65,7 @@ fun TechSpecsScreen(
     val categories = remember {
         listOf(
             TechSpecCategory(
-                icon = Icons.Filled.OilBarrel,
+                icon = Icons.Filled.Info,
                 name = "Жидкости и объёмы",
                 count = 6,
                 specs = listOf(
@@ -78,7 +78,7 @@ fun TechSpecsScreen(
                 ),
             ),
             TechSpecCategory(
-                icon = Icons.Filled.Compress,
+                icon = Icons.Filled.Speed,
                 name = "Давления",
                 count = 4,
                 specs = listOf(
@@ -89,7 +89,7 @@ fun TechSpecsScreen(
                 ),
             ),
             TechSpecCategory(
-                icon = Icons.Filled.Speed,
+                icon = Icons.Filled.Build,
                 name = "Моменты затяжки",
                 count = 5,
                 specs = listOf(
@@ -101,7 +101,7 @@ fun TechSpecsScreen(
                 ),
             ),
             TechSpecCategory(
-                icon = Icons.Filled.Straighten,
+                icon = Icons.Filled.Settings,
                 name = "Зазоры",
                 count = 3,
                 specs = listOf(
@@ -111,7 +111,7 @@ fun TechSpecsScreen(
                 ),
             ),
             TechSpecCategory(
-                icon = Icons.Filled.Bolt,
+                icon = Icons.Filled.Star,
                 name = "Электрика",
                 count = 3,
                 specs = listOf(

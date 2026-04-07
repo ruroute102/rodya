@@ -22,11 +22,11 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.DirectionsCar
-import androidx.compose.material.icons.filled.HealthAndSafety
 import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Speed
-import androidx.compose.material.icons.filled.ThreeDRotation
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -156,7 +156,7 @@ fun HomeScreen(
             )
             QuickActionCard(
                 modifier = Modifier.weight(1f),
-                icon = Icons.Filled.HealthAndSafety,
+                icon = Icons.Filled.Info,
                 title = "Диагностика",
                 subtitle = "По симптомам",
                 onClick = onDiagnostics,
@@ -193,7 +193,7 @@ fun HomeScreen(
         ) {
             QuickActionCard(
                 modifier = Modifier.weight(1f),
-                icon = Icons.Filled.ThreeDRotation,
+                icon = Icons.Filled.Settings,
                 title = "3D-модель",
                 subtitle = "Узлы авто",
                 onClick = onViewer3D,

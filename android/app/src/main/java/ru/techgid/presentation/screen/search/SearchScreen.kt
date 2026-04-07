@@ -23,7 +23,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Clear
-import androidx.compose.material.icons.filled.HealthAndSafety
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Speed
@@ -233,7 +233,7 @@ private fun SearchResultRow(item: SearchResultItem, onClick: () -> Unit) {
     val (icon, color) = when (item.type) {
         SearchResultType.GUIDE -> Icons.Filled.Build to MaterialTheme.colorScheme.primary
         SearchResultType.COMPONENT -> Icons.Filled.Build to MaterialTheme.colorScheme.secondary
-        SearchResultType.SYMPTOM -> Icons.Filled.HealthAndSafety to MaterialTheme.colorScheme.error
+        SearchResultType.SYMPTOM -> Icons.Filled.Info to MaterialTheme.colorScheme.error
         SearchResultType.SPEC -> Icons.Filled.Speed to MaterialTheme.colorScheme.tertiary
     }
 
@@ -290,6 +290,6 @@ private fun SearchResultRow(item: SearchResultItem, onClick: () -> Unit) {
 @Suppress("unused")
 private fun previewIcons(): List<ImageVector> = listOf(
     Icons.Filled.Build,
-    Icons.Filled.HealthAndSafety,
+    Icons.Filled.Info,
     Icons.Filled.Speed,
 )

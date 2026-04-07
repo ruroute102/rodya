@@ -21,14 +21,11 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
 import androidx.compose.material.icons.filled.CloudDownload
-import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.PrivacyTip
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -93,7 +90,7 @@ fun SettingsScreen(
         SectionHeader("Внешний вид")
         SettingsGroup {
             SwitchRow(
-                icon = Icons.Filled.DarkMode,
+                icon = Icons.Filled.Settings,
                 title = "Тёмная тема",
                 subtitle = "Использовать тёмное оформление",
                 checked = darkTheme,
@@ -101,7 +98,7 @@ fun SettingsScreen(
             )
             DividerItem()
             ClickableRow(
-                icon = Icons.Filled.Language,
+                icon = Icons.Filled.Settings,
                 title = "Язык",
                 subtitle = "Русский",
                 onClick = {},
@@ -138,14 +135,14 @@ fun SettingsScreen(
             )
             DividerItem()
             ClickableRow(
-                icon = Icons.Filled.Storage,
+                icon = Icons.Filled.Info,
                 title = "Использовано места",
                 subtitle = "124 МБ из 1 ГБ",
                 onClick = {},
             )
             DividerItem()
             ClickableRow(
-                icon = Icons.Filled.Storage,
+                icon = Icons.Filled.Info,
                 title = "Очистить кэш",
                 subtitle = "Освободить ~32 МБ",
                 onClick = {},
@@ -162,7 +159,7 @@ fun SettingsScreen(
             )
             DividerItem()
             ClickableRow(
-                icon = Icons.Filled.PrivacyTip,
+                icon = Icons.Filled.Lock,
                 title = "Конфиденциальность",
                 subtitle = null,
                 onClick = {},

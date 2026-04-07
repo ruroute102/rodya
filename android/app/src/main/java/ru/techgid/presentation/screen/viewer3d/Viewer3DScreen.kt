@@ -28,7 +28,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.ThreeDRotation
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.ZoomIn
 import androidx.compose.material.icons.filled.ZoomOut
 import androidx.compose.material3.Card
@@ -158,7 +158,7 @@ fun Viewer3DScreen(
                 ControlButton(Icons.Filled.ZoomIn) {}
                 ControlButton(Icons.Filled.ZoomOut) {}
                 ControlButton(Icons.Filled.Refresh) {}
-                ControlButton(Icons.Filled.ThreeDRotation) {}
+                ControlButton(Icons.Filled.Settings) {}
             }
         }
 
