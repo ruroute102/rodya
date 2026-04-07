@@ -50,6 +50,8 @@ fun ProfileScreen(
     onLogout: () -> Unit = {},
     onEditProfile: () -> Unit = {},
     onLogin: () -> Unit = {},
+    onSettings: () -> Unit = {},
+    onServiceHistory: () -> Unit = {},
 ) {
     val state by viewModel.uiState.collectAsState()
 
@@ -173,11 +175,23 @@ fun ProfileScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
+        // History (offline available regardless of login)
+        ProfileSection(title = "Журнал") {
+            ProfileInfoRow(
+                icon = Icons.Filled.DirectionsCar,
+                label = "История обслуживания",
+                onClick = onServiceHistory,
+            )
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
         // Settings
         ProfileSection(title = "Настройки") {
             ProfileInfoRow(
                 icon = Icons.Filled.Settings,
                 label = "Настройки приложения",
+                onClick = onSettings,
             )
             HorizontalDivider(color = TechGidTheme.extendedColors.divider)
             if (state.isLoggedIn) {

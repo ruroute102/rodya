@@ -17,7 +17,13 @@ import ru.techgid.presentation.screen.carselect.CarSelectScreen
 import ru.techgid.presentation.screen.catalog.CatalogScreen
 import ru.techgid.presentation.screen.diagnostic.DiagnosticScreen
 import ru.techgid.presentation.screen.guide.GuideDetailScreen
+import ru.techgid.presentation.screen.history.ServiceHistoryScreen
+import ru.techgid.presentation.screen.home.HomeScreen
 import ru.techgid.presentation.screen.profile.ProfileScreen
+import ru.techgid.presentation.screen.search.SearchScreen
+import ru.techgid.presentation.screen.settings.SettingsScreen
+import ru.techgid.presentation.screen.techspecs.TechSpecsScreen
+import ru.techgid.presentation.screen.viewer3d.Viewer3DScreen
 
 @Composable
 fun TechGidNavHost() {
@@ -26,7 +32,8 @@ fun TechGidNavHost() {
     val currentRoute = navBackStackEntry?.destination?.route
 
     val showBottomBar = currentRoute in listOf(
-        NavRoute.CarSelect.route,
+        NavRoute.Home.route,
+        NavRoute.Search.route,
         NavRoute.Profile.route,
     )
 
@@ -37,11 +44,16 @@ fun TechGidNavHost() {
                     currentRoute = currentRoute ?: "",
                     onNavigate = { route ->
                         when (route) {
-                            "home" -> navController.navigate(NavRoute.CarSelect.route) {
-                                popUpTo(NavRoute.CarSelect.route) { inclusive = true }
+                            "home" -> navController.navigate(NavRoute.Home.route) {
+                                popUpTo(NavRoute.Home.route) { inclusive = true }
+                            }
+                            "search" -> navController.navigate(NavRoute.Search.route) {
+                                popUpTo(NavRoute.Home.route) { saveState = true }
+                                launchSingleTop = true
+                                restoreState = true
                             }
                             "profile" -> navController.navigate(NavRoute.Profile.route) {
-                                popUpTo(NavRoute.CarSelect.route) { saveState = true }
+                                popUpTo(NavRoute.Home.route) { saveState = true }
                                 launchSingleTop = true
                                 restoreState = true
                             }
@@ -53,9 +65,22 @@ fun TechGidNavHost() {
     ) { innerPadding ->
         NavHost(
             navController = navController,
-            startDestination = NavRoute.CarSelect.route,
+            startDestination = NavRoute.Home.route,
             modifier = Modifier.padding(innerPadding),
         ) {
+            // Home
+            composable(NavRoute.Home.route) {
+                HomeScreen(
+                    onSelectCar = { navController.navigate(NavRoute.CarSelect.route) },
+                    onCatalog = { navController.navigate(NavRoute.Catalog.create(1)) },
+                    onDiagnostics = { navController.navigate(NavRoute.Diagnostic.create(1)) },
+                    onSearch = { navController.navigate(NavRoute.Search.route) },
+                    onTechSpecs = { navController.navigate(NavRoute.TechSpecs.route) },
+                    onViewer3D = { navController.navigate(NavRoute.Viewer3D.route) },
+                    onServiceHistory = { navController.navigate(NavRoute.ServiceHistory.route) },
+                )
+            }
+
             // Car selection
             composable(NavRoute.CarSelect.route) {
                 CarSelectScreen(
@@ -84,6 +109,39 @@ fun TechGidNavHost() {
                     },
                     onBack = { navController.popBackStack() },
                 )
+            }
+
+            // Search
+            composable(NavRoute.Search.route) {
+                SearchScreen(
+                    onBack = { navController.popBackStack() },
+                    onGuideClick = { guideId ->
+                        navController.navigate(NavRoute.GuideDetail.create(guideId))
+                    },
+                    onSymptomClick = {
+                        navController.navigate(NavRoute.Diagnostic.create(1))
+                    },
+                )
+            }
+
+            // TechSpecs
+            composable(NavRoute.TechSpecs.route) {
+                TechSpecsScreen(onBack = { navController.popBackStack() })
+            }
+
+            // Service History
+            composable(NavRoute.ServiceHistory.route) {
+                ServiceHistoryScreen(onBack = { navController.popBackStack() })
+            }
+
+            // Settings
+            composable(NavRoute.Settings.route) {
+                SettingsScreen(onBack = { navController.popBackStack() })
+            }
+
+            // 3D Viewer
+            composable(NavRoute.Viewer3D.route) {
+                Viewer3DScreen(onBack = { navController.popBackStack() })
             }
 
             // Guide detail
@@ -124,12 +182,18 @@ fun TechGidNavHost() {
             composable(NavRoute.Profile.route) {
                 ProfileScreen(
                     onLogout = {
-                        navController.navigate(NavRoute.CarSelect.route) {
+                        navController.navigate(NavRoute.Home.route) {
                             popUpTo(0) { inclusive = true }
                         }
                     },
                     onLogin = {
                         navController.navigate(NavRoute.Auth.route)
+                    },
+                    onSettings = {
+                        navController.navigate(NavRoute.Settings.route)
+                    },
+                    onServiceHistory = {
+                        navController.navigate(NavRoute.ServiceHistory.route)
                     },
                 )
             }

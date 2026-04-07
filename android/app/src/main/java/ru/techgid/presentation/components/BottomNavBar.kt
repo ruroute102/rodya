@@ -3,8 +3,8 @@ package ru.techgid.presentation.components
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
@@ -23,8 +23,8 @@ fun BottomNavBar(
     onNavigate: (String) -> Unit = {},
 ) {
     val items = listOf(
-        BottomNavItem(Icons.Filled.Home, "Главная", "home", "car_select"),
-        BottomNavItem(Icons.Filled.Notifications, "Уведомления", "notifications", ""),
+        BottomNavItem(Icons.Filled.Home, "Главная", "home", "home"),
+        BottomNavItem(Icons.Filled.Search, "Поиск", "search", "search"),
         BottomNavItem(Icons.Filled.Person, "Профиль", "profile", "profile"),
     )
 
@@ -33,8 +33,7 @@ fun BottomNavBar(
         tonalElevation = 0.dp,
     ) {
         items.forEach { item ->
-            val isSelected = currentRoute == item.matchRoute ||
-                    (item.route == "home" && currentRoute == "car_select")
+            val isSelected = currentRoute == item.matchRoute
 
             NavigationBarItem(
                 selected = isSelected,
