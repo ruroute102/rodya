@@ -9,6 +9,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import ru.techgid.data.repository.FavoriteRepository
+import ru.techgid.data.repository.StepProgressRepository
 import ru.techgid.domain.model.Comment
 import ru.techgid.domain.model.GuideDetail
 import ru.techgid.domain.repository.GuideRepository
@@ -21,6 +23,8 @@ data class GuideDetailUiState(
     val commentText: String = "",
     val isLoading: Boolean = false,
     val isSavedOffline: Boolean = false,
+    val isFavorite: Boolean = false,
+    val doneStepIds: Set<Int> = emptySet(),
     val error: String? = null,
 ) {
     val totalSteps: Int get() = guideDetail?.steps?.size ?: 0
@@ -33,6 +37,8 @@ data class GuideDetailUiState(
 class GuideDetailViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val guideRepository: GuideRepository,
+    private val favoriteRepository: FavoriteRepository,
+    private val stepProgressRepository: StepProgressRepository,
 ) : ViewModel() {
 
     private val guideId: Int = checkNotNull(savedStateHandle.get<Int>("guideId"))
@@ -43,6 +49,8 @@ class GuideDetailViewModel @Inject constructor(
     init {
         loadGuideDetail()
         checkOfflineStatus()
+        observeFavorite()
+        observeStepProgress()
     }
 
     private fun loadGuideDetail() {
@@ -86,6 +94,43 @@ class GuideDetailViewModel @Inject constructor(
             } catch (_: Exception) {
                 // Ignore
             }
+        }
+    }
+
+    private fun observeFavorite() {
+        viewModelScope.launch {
+            favoriteRepository.observeIsFavorite(guideId).collect { isFav ->
+                _uiState.update { it.copy(isFavorite = isFav) }
+            }
+        }
+    }
+
+    private fun observeStepProgress() {
+        viewModelScope.launch {
+            stepProgressRepository.observeForGuide(guideId).collect { progressList ->
+                val doneIds = progressList.filter { it.isDone }.map { it.stepId }.toSet()
+                _uiState.update { it.copy(doneStepIds = doneIds) }
+            }
+        }
+    }
+
+    fun toggleFavorite() {
+        viewModelScope.launch {
+            val detail = _uiState.value.guideDetail ?: return@launch
+            favoriteRepository.toggle(
+                guideId = guideId,
+                title = detail.title,
+                componentName = detail.componentName,
+                difficulty = detail.difficulty.label,
+                estimatedTimeMin = detail.estimatedTimeMin,
+            )
+        }
+    }
+
+    fun toggleStepDone(stepId: Int) {
+        viewModelScope.launch {
+            val isDone = stepId in _uiState.value.doneStepIds
+            stepProgressRepository.setStepDone(guideId, stepId, !isDone)
         }
     }
 
@@ -144,7 +189,6 @@ class GuideDetailViewModel @Inject constructor(
                     guideRepository.removeGuideOffline(guideId)
                     _uiState.update { it.copy(isSavedOffline = false) }
                 } else {
-                    // Use 0 as default configurationId when not available
                     guideRepository.saveGuideOffline(guideId, configurationId = 0)
                     _uiState.update { it.copy(isSavedOffline = true) }
                 }

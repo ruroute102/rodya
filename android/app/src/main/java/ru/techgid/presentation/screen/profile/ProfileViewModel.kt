@@ -6,10 +6,13 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import ru.techgid.data.local.dao.GuideDao
-import ru.techgid.domain.repository.AuthRepository
+import ru.techgid.data.repository.AppPrefsRepository
+import ru.techgid.data.repository.FavoriteRepository
+import ru.techgid.data.repository.ServiceRecordRepository
 import javax.inject.Inject
 
 data class ProfileUiState(
@@ -19,12 +22,16 @@ data class ProfileUiState(
     val userCar: String = "",
     val offlineCount: Int = 0,
     val commentsCount: Int = 0,
+    val favoritesCount: Int = 0,
+    val historyCount: Int = 0,
     val isLoggedIn: Boolean = false,
 )
 
 @HiltViewModel
 class ProfileViewModel @Inject constructor(
-    private val authRepository: AuthRepository,
+    private val prefs: AppPrefsRepository,
+    private val favorites: FavoriteRepository,
+    private val history: ServiceRecordRepository,
     private val guideDao: GuideDao,
 ) : ViewModel() {
 
@@ -32,33 +39,40 @@ class ProfileViewModel @Inject constructor(
     val uiState: StateFlow<ProfileUiState> = _uiState.asStateFlow()
 
     init {
-        loadProfile()
-    }
-
-    private fun loadProfile() {
         viewModelScope.launch {
-            val isLoggedIn = authRepository.isLoggedIn()
-            val offlineCount = try { guideDao.getOfflineCount() } catch (_: Exception) { 0 }
-
-            _uiState.update {
-                it.copy(
-                    isLoggedIn = isLoggedIn,
+            combine(
+                prefs.profileName,
+                prefs.profilePhone,
+                prefs.isLoggedIn,
+                prefs.selectedCarName,
+                favorites.observeCount(),
+                history.observeCount(),
+            ) { values ->
+                val name = values[0] as String
+                val phone = values[1] as String
+                val loggedIn = values[2] as Boolean
+                val car = values[3] as String
+                @Suppress("UNCHECKED_CAST")
+                val favCount = values[4] as Int
+                @Suppress("UNCHECKED_CAST")
+                val histCount = values[5] as Int
+                val offlineCount = try { guideDao.getOfflineCount() } catch (_: Exception) { 0 }
+                ProfileUiState(
+                    userName = name.ifBlank { if (loggedIn) "Пользователь" else "" },
+                    userPhone = phone,
+                    isLoggedIn = loggedIn,
+                    userCar = car,
                     offlineCount = offlineCount,
-                    userName = if (isLoggedIn) "Пользователь" else "",
-                    userCar = "Audi Q3 2011 · 2.0 TFSI",
+                    favoritesCount = favCount,
+                    historyCount = histCount,
                 )
-            }
+            }.collect { state -> _uiState.update { state } }
         }
     }
 
     fun logout() {
         viewModelScope.launch {
-            try {
-                authRepository.logout()
-            } catch (_: Exception) {
-                // Even if network fails, clear local state
-            }
-            _uiState.update { ProfileUiState(isLoggedIn = false) }
+            prefs.logout()
         }
     }
 }

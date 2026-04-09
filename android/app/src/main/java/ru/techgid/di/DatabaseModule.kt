@@ -8,7 +8,12 @@ import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import ru.techgid.data.local.dao.CarDao
+import ru.techgid.data.local.dao.FavoriteDao
 import ru.techgid.data.local.dao.GuideDao
+import ru.techgid.data.local.dao.ReminderDao
+import ru.techgid.data.local.dao.SearchHistoryDao
+import ru.techgid.data.local.dao.ServiceRecordDao
+import ru.techgid.data.local.dao.StepProgressDao
 import ru.techgid.data.local.db.TechGidDatabase
 import javax.inject.Singleton
 
@@ -19,15 +24,11 @@ object DatabaseModule {
     @Provides
     @Singleton
     fun provideDatabase(@ApplicationContext context: Context): TechGidDatabase {
-        // TODO: В продакшене использовать SQLCipher через SupportFactory
-        // val passphrase = SQLiteDatabase.getBytes("encryption_key".toCharArray())
-        // val factory = SupportFactory(passphrase)
         return Room.databaseBuilder(
             context,
             TechGidDatabase::class.java,
             "techgid.db",
         )
-            // .openHelperFactory(factory)  // SQLCipher
             .fallbackToDestructiveMigration()
             .build()
     }
@@ -37,4 +38,19 @@ object DatabaseModule {
 
     @Provides
     fun provideGuideDao(db: TechGidDatabase): GuideDao = db.guideDao()
+
+    @Provides
+    fun provideServiceRecordDao(db: TechGidDatabase): ServiceRecordDao = db.serviceRecordDao()
+
+    @Provides
+    fun provideFavoriteDao(db: TechGidDatabase): FavoriteDao = db.favoriteDao()
+
+    @Provides
+    fun provideStepProgressDao(db: TechGidDatabase): StepProgressDao = db.stepProgressDao()
+
+    @Provides
+    fun provideSearchHistoryDao(db: TechGidDatabase): SearchHistoryDao = db.searchHistoryDao()
+
+    @Provides
+    fun provideReminderDao(db: TechGidDatabase): ReminderDao = db.reminderDao()
 }

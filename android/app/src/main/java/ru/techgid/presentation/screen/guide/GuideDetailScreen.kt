@@ -24,11 +24,15 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Build
+import androidx.compose.material.icons.filled.CheckBox
+import androidx.compose.material.icons.filled.CheckBoxOutlineBlank
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.CloudDownload
 import androidx.compose.material.icons.filled.CloudDone
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Card
@@ -98,6 +102,14 @@ fun GuideDetailScreen(
                 )
             }
             Spacer(modifier = Modifier.weight(1f))
+            IconButton(onClick = { viewModel.toggleFavorite() }) {
+                Icon(
+                    if (state.isFavorite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
+                    "В избранное",
+                    tint = if (state.isFavorite) MaterialTheme.colorScheme.error
+                    else TechGidTheme.extendedColors.iconTint,
+                )
+            }
             IconButton(onClick = { viewModel.toggleOfflineSave() }) {
                 Icon(
                     if (state.isSavedOffline) Icons.Filled.CloudDone else Icons.Filled.CloudDownload,
@@ -136,17 +148,32 @@ fun GuideDetailScreen(
                     .padding(horizontal = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                // Step title + description
+                // Step title + description + done checkbox
                 item {
                     if (currentStep != null) {
-                        Text(
-                            text = currentStep.title,
-                            style = MaterialTheme.typography.headlineMedium.copy(
-                                fontWeight = FontWeight.Bold,
-                                lineHeight = 32.sp,
-                            ),
-                            color = MaterialTheme.colorScheme.onBackground,
-                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = currentStep.title,
+                                    style = MaterialTheme.typography.headlineMedium.copy(
+                                        fontWeight = FontWeight.Bold,
+                                        lineHeight = 32.sp,
+                                    ),
+                                    color = MaterialTheme.colorScheme.onBackground,
+                                )
+                            }
+                            val isDone = currentStep.id in state.doneStepIds
+                            IconButton(onClick = { viewModel.toggleStepDone(currentStep.id) }) {
+                                Icon(
+                                    imageVector = if (isDone) Icons.Filled.CheckBox else Icons.Filled.CheckBoxOutlineBlank,
+                                    contentDescription = if (isDone) "Шаг выполнен" else "Отметить выполненным",
+                                    tint = if (isDone) MaterialTheme.colorScheme.primary
+                                    else TechGidTheme.extendedColors.iconTint,
+                                )
+                            }
+                        }
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
                             text = currentStep.description,

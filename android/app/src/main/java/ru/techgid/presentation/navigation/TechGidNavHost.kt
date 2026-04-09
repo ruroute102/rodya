@@ -78,6 +78,9 @@ fun TechGidNavHost() {
                     onTechSpecs = { navController.navigate(NavRoute.TechSpecs.route) },
                     onViewer3D = { navController.navigate(NavRoute.Viewer3D.route) },
                     onServiceHistory = { navController.navigate(NavRoute.ServiceHistory.route) },
+                    onGuideClick = { guideId ->
+                        navController.navigate(NavRoute.GuideDetail.create(guideId))
+                    },
                 )
             }
 

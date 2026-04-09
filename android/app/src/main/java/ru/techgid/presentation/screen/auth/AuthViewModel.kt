@@ -6,9 +6,10 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import ru.techgid.domain.repository.AuthRepository
+import ru.techgid.data.repository.AppPrefsRepository
 import javax.inject.Inject
 
 data class AuthUiState(
@@ -25,14 +26,17 @@ data class AuthUiState(
 
 @HiltViewModel
 class AuthViewModel @Inject constructor(
-    private val authRepository: AuthRepository,
+    private val prefs: AppPrefsRepository,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AuthUiState())
     val uiState: StateFlow<AuthUiState> = _uiState.asStateFlow()
 
     init {
-        _uiState.update { it.copy(isAuthenticated = authRepository.isLoggedIn()) }
+        viewModelScope.launch {
+            val loggedIn = prefs.isLoggedIn.first()
+            _uiState.update { it.copy(isAuthenticated = loggedIn) }
+        }
     }
 
     fun updatePhone(phone: String) {
@@ -65,32 +69,11 @@ class AuthViewModel @Inject constructor(
     fun requestOtp() {
         val state = _uiState.value
         if (state.phone.isBlank()) {
-            _uiState.update { it.copy(errorMessage = "Please enter phone number") }
+            _uiState.update { it.copy(errorMessage = "Введите номер телефона") }
             return
         }
-
-        viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, errorMessage = null) }
-            try {
-                val result = authRepository.requestOtp(state.phone)
-                if (result != null) {
-                    _uiState.update {
-                        it.copy(isLoading = false, showOtpField = true)
-                    }
-                } else {
-                    _uiState.update {
-                        it.copy(isLoading = false, errorMessage = "Failed to send OTP")
-                    }
-                }
-            } catch (e: Exception) {
-                _uiState.update {
-                    it.copy(
-                        isLoading = false,
-                        errorMessage = e.message ?: "Failed to request OTP",
-                    )
-                }
-            }
-        }
+        // Offline mode: skip real OTP, just show the code field
+        _uiState.update { it.copy(showOtpField = true) }
     }
 
     fun register() {
@@ -98,34 +81,19 @@ class AuthViewModel @Inject constructor(
         if (state.phone.isBlank() || state.otpCode.isBlank() ||
             state.displayName.isBlank() || state.password.isBlank()
         ) {
-            _uiState.update { it.copy(errorMessage = "Please fill in all fields") }
+            _uiState.update { it.copy(errorMessage = "Заполните все поля") }
             return
         }
 
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
-            try {
-                val success = authRepository.register(
-                    phone = state.phone,
-                    code = state.otpCode,
-                    displayName = state.displayName,
-                    password = state.password,
-                )
-                if (success) {
-                    _uiState.update {
-                        it.copy(isLoading = false, isAuthenticated = true)
-                    }
-                } else {
-                    _uiState.update {
-                        it.copy(isLoading = false, errorMessage = "Registration failed")
-                    }
-                }
-            } catch (e: Exception) {
+            // Offline local auth: accept any 6-digit code, save profile locally
+            if (state.otpCode.length == 6 && state.password.length >= 8) {
+                prefs.saveProfile(name = state.displayName, phone = state.phone)
+                _uiState.update { it.copy(isLoading = false, isAuthenticated = true) }
+            } else {
                 _uiState.update {
-                    it.copy(
-                        isLoading = false,
-                        errorMessage = e.message ?: "Registration failed",
-                    )
+                    it.copy(isLoading = false, errorMessage = "Неверный код или пароль")
                 }
             }
         }
@@ -134,32 +102,19 @@ class AuthViewModel @Inject constructor(
     fun login() {
         val state = _uiState.value
         if (state.phone.isBlank() || state.password.isBlank()) {
-            _uiState.update { it.copy(errorMessage = "Please enter phone and password") }
+            _uiState.update { it.copy(errorMessage = "Введите телефон и пароль") }
             return
         }
 
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
-            try {
-                val success = authRepository.login(
-                    phone = state.phone,
-                    password = state.password,
-                )
-                if (success) {
-                    _uiState.update {
-                        it.copy(isLoading = false, isAuthenticated = true)
-                    }
-                } else {
-                    _uiState.update {
-                        it.copy(isLoading = false, errorMessage = "Invalid credentials")
-                    }
-                }
-            } catch (e: Exception) {
+            // Offline local auth: accept any password >= 8 chars
+            if (state.password.length >= 8) {
+                prefs.saveProfile(name = state.phone, phone = state.phone)
+                _uiState.update { it.copy(isLoading = false, isAuthenticated = true) }
+            } else {
                 _uiState.update {
-                    it.copy(
-                        isLoading = false,
-                        errorMessage = e.message ?: "Login failed",
-                    )
+                    it.copy(isLoading = false, errorMessage = "Пароль должен быть не менее 8 символов")
                 }
             }
         }

@@ -1,7 +1,6 @@
 package ru.techgid.presentation.screen.history
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -23,6 +22,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -38,7 +38,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -46,54 +46,20 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-
-private data class ServiceRecord(
-    val title: String,
-    val date: String,
-    val mileage: String,
-    val notes: String,
-    val cost: String,
-)
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.hilt.navigation.compose.hiltViewModel
+import ru.techgid.data.local.entity.ServiceRecordEntity
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ServiceHistoryScreen(
+    viewModel: ServiceHistoryViewModel = hiltViewModel(),
     onBack: () -> Unit = {},
 ) {
-    val records = remember {
-        mutableStateListOf(
-            ServiceRecord(
-                title = "Замена масла и фильтра",
-                date = "15.03.2026",
-                mileage = "152 340 км",
-                notes = "Mobil 1 5W-30, фильтр Mahle",
-                cost = "4 200 ₽",
-            ),
-            ServiceRecord(
-                title = "Замена тормозных колодок (перед)",
-                date = "10.02.2026",
-                mileage = "151 200 км",
-                notes = "ATE Ceramic, оригинал",
-                cost = "8 500 ₽",
-            ),
-            ServiceRecord(
-                title = "Замена воздушного фильтра",
-                date = "20.01.2026",
-                mileage = "150 100 км",
-                notes = "Mann C 30 005",
-                cost = "1 200 ₽",
-            ),
-            ServiceRecord(
-                title = "Замена свечей зажигания",
-                date = "10.12.2025",
-                mileage = "148 500 км",
-                notes = "NGK PFR7S8EG, момент 25 Нм",
-                cost = "3 600 ₽",
-            ),
-        )
-    }
+    val state by viewModel.uiState.collectAsState()
 
     var showAddSheet by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState()
@@ -138,14 +104,14 @@ fun ServiceHistoryScreen(
                         color = MaterialTheme.colorScheme.onBackground,
                     )
                     Text(
-                        text = "${records.size} записей",
+                        text = "${state.count} записей",
                         fontSize = 12.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }
 
-            // Сводка по затратам
+            // Сводка
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -161,12 +127,12 @@ fun ServiceHistoryScreen(
                 ) {
                     Column {
                         Text(
-                            text = "Всего за год",
+                            text = "Всего потрачено",
                             fontSize = 12.sp,
                             color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f),
                         )
                         Text(
-                            text = "17 500 ₽",
+                            text = "${formatRub(state.totalCost)} ₽",
                             fontSize = 22.sp,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onPrimary,
@@ -179,7 +145,7 @@ fun ServiceHistoryScreen(
                             color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f),
                         )
                         Text(
-                            text = "152 340 км",
+                            text = "${formatRub(state.maxMileage)} км",
                             fontSize = 16.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = MaterialTheme.colorScheme.onPrimary,
@@ -188,12 +154,28 @@ fun ServiceHistoryScreen(
                 }
             }
 
-            LazyColumn(
-                contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
-                items(records) { record ->
-                    ServiceRecordCard(record)
+            if (state.records.isEmpty()) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        text = "Пока нет записей.\nНажмите + чтобы добавить.",
+                        fontSize = 14.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            } else {
+                LazyColumn(
+                    contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    items(state.records, key = { it.id }) { record ->
+                        ServiceRecordCard(
+                            record = record,
+                            onDelete = { viewModel.delete(record.id) },
+                        )
+                    }
                 }
             }
         }
@@ -205,8 +187,8 @@ fun ServiceHistoryScreen(
             sheetState = sheetState,
         ) {
             AddRecordForm(
-                onAdd = { rec ->
-                    records.add(0, rec)
+                onAdd = { title, mileage, cost, notes ->
+                    viewModel.add(title, mileage, cost, notes)
                     showAddSheet = false
                 },
                 onCancel = { showAddSheet = false },
@@ -216,7 +198,7 @@ fun ServiceHistoryScreen(
 }
 
 @Composable
-private fun ServiceRecordCard(record: ServiceRecord) {
+private fun ServiceRecordCard(record: ServiceRecordEntity, onDelete: () -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
@@ -231,6 +213,7 @@ private fun ServiceRecordCard(record: ServiceRecord) {
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(14.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Box(
                 modifier = Modifier
@@ -256,7 +239,7 @@ private fun ServiceRecordCard(record: ServiceRecord) {
                 )
                 Spacer(Modifier.height(2.dp))
                 Text(
-                    text = "${record.date} · ${record.mileage}",
+                    text = "${formatDate(record.dateIso)} · ${formatRub(record.mileageKm)} км",
                     fontSize = 12.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -269,19 +252,33 @@ private fun ServiceRecordCard(record: ServiceRecord) {
                     )
                 }
             }
-            Text(
-                text = record.cost,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.primary,
-            )
+            Column(horizontalAlignment = Alignment.End) {
+                Text(
+                    text = "${formatRub(record.costRub)} ₽",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+                Spacer(Modifier.height(2.dp))
+                IconButton(
+                    onClick = onDelete,
+                    modifier = Modifier.size(28.dp),
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Delete,
+                        contentDescription = "Удалить",
+                        tint = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.size(18.dp),
+                    )
+                }
+            }
         }
     }
 }
 
 @Composable
 private fun AddRecordForm(
-    onAdd: (ServiceRecord) -> Unit,
+    onAdd: (title: String, mileage: Int, cost: Int, notes: String) -> Unit,
     onCancel: () -> Unit,
 ) {
     var title by remember { mutableStateOf("") }
@@ -322,18 +319,20 @@ private fun AddRecordForm(
         Spacer(Modifier.height(8.dp))
         OutlinedTextField(
             value = mileage,
-            onValueChange = { mileage = it },
+            onValueChange = { mileage = it.filter(Char::isDigit) },
             label = { Text("Пробег, км") },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
         )
         Spacer(Modifier.height(8.dp))
         OutlinedTextField(
             value = cost,
-            onValueChange = { cost = it },
+            onValueChange = { cost = it.filter(Char::isDigit) },
             label = { Text("Стоимость, ₽") },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
         )
         Spacer(Modifier.height(8.dp))
         OutlinedTextField(
@@ -347,22 +346,38 @@ private fun AddRecordForm(
 
         Button(
             onClick = {
-                if (title.isNotBlank()) {
-                    onAdd(
-                        ServiceRecord(
-                            title = title,
-                            date = "Сегодня",
-                            mileage = if (mileage.isNotBlank()) "$mileage км" else "—",
-                            notes = notes,
-                            cost = if (cost.isNotBlank()) "$cost ₽" else "—",
-                        )
-                    )
-                }
+                onAdd(
+                    title,
+                    mileage.toIntOrNull() ?: 0,
+                    cost.toIntOrNull() ?: 0,
+                    notes,
+                )
             },
+            enabled = title.isNotBlank(),
             modifier = Modifier.fillMaxWidth(),
         ) {
             Text("Сохранить")
         }
         Spacer(Modifier.height(16.dp))
     }
+}
+
+private fun formatRub(value: Int): String {
+    val str = value.toString()
+    val sb = StringBuilder()
+    var count = 0
+    for (i in str.length - 1 downTo 0) {
+        sb.insert(0, str[i])
+        count++
+        if (count % 3 == 0 && i > 0) sb.insert(0, ' ')
+    }
+    return sb.toString()
+}
+
+private fun formatDate(iso: String): String {
+    // 2026-03-15 -> 15.03.2026
+    return runCatching {
+        val (y, m, d) = iso.split("-")
+        "$d.$m.$y"
+    }.getOrDefault(iso)
 }

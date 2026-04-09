@@ -33,6 +33,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -40,10 +42,12 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import ru.techgid.presentation.theme.TechGidTheme
 
 @Composable
 fun HomeScreen(
+    viewModel: HomeViewModel = hiltViewModel(),
     onSelectCar: () -> Unit = {},
     onCatalog: () -> Unit = {},
     onDiagnostics: () -> Unit = {},
@@ -51,7 +55,10 @@ fun HomeScreen(
     onTechSpecs: () -> Unit = {},
     onViewer3D: () -> Unit = {},
     onServiceHistory: () -> Unit = {},
+    onGuideClick: (Int) -> Unit = {},
 ) {
+    val state by viewModel.uiState.collectAsState()
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -117,7 +124,7 @@ fun HomeScreen(
                     )
                     Spacer(Modifier.height(2.dp))
                     Text(
-                        text = "Audi Q3 2011 · 2.0 TFSI",
+                        text = state.carName,
                         color = MaterialTheme.colorScheme.onPrimary,
                         fontSize = 16.sp,
                         fontWeight = FontWeight.SemiBold,
@@ -218,15 +225,16 @@ fun HomeScreen(
         Spacer(Modifier.height(12.dp))
 
         listOf(
-            Triple("Замена топливного насоса", "6 шагов · 2 часа", "Средняя"),
-            Triple("Замена масла", "3 шага · 30 минут", "Лёгкая"),
-            Triple("Замена тормозных колодок", "5 шагов · 1.5 часа", "Средняя"),
-        ).forEach { (title, meta, difficulty) ->
+            Triple("Замена топливного насоса", "6 шагов · 2 часа", "Средняя") to 1,
+            Triple("Замена масла", "3 шага · 30 минут", "Лёгкая") to 3,
+            Triple("Замена тормозных колодок", "5 шагов · 1.5 часа", "Средняя") to 4,
+        ).forEach { (triple, guideId) ->
+            val (title, meta, difficulty) = triple
             PopularGuideCard(
                 title = title,
                 meta = meta,
                 difficulty = difficulty,
-                onClick = onCatalog,
+                onClick = { onGuideClick(guideId) },
             )
             Spacer(Modifier.height(8.dp))
         }

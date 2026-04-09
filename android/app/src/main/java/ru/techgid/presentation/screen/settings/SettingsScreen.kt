@@ -35,10 +35,12 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -49,12 +51,14 @@ import androidx.compose.ui.unit.sp
 
 @Composable
 fun SettingsScreen(
+    viewModel: SettingsViewModel = hiltViewModel(),
     onBack: () -> Unit = {},
 ) {
-    var darkTheme by remember { mutableStateOf(false) }
-    var notifications by remember { mutableStateOf(true) }
-    var maintenanceReminders by remember { mutableStateOf(true) }
-    var offlineSync by remember { mutableStateOf(false) }
+    val state by viewModel.uiState.collectAsState()
+    val darkTheme = state.darkTheme
+    val notifications = state.notifications
+    val maintenanceReminders = state.maintenanceReminders
+    val offlineSync = state.offlineSync
 
     Column(
         modifier = Modifier
@@ -94,7 +98,7 @@ fun SettingsScreen(
                 title = "Тёмная тема",
                 subtitle = "Использовать тёмное оформление",
                 checked = darkTheme,
-                onCheckedChange = { darkTheme = it },
+                onCheckedChange = viewModel::toggleDarkTheme,
             )
             DividerItem()
             ClickableRow(
@@ -112,7 +116,7 @@ fun SettingsScreen(
                 title = "Push-уведомления",
                 subtitle = "Новые инструкции, ответы",
                 checked = notifications,
-                onCheckedChange = { notifications = it },
+                onCheckedChange = viewModel::toggleNotifications,
             )
             DividerItem()
             SwitchRow(
@@ -120,7 +124,7 @@ fun SettingsScreen(
                 title = "Напоминания о ТО",
                 subtitle = "По пробегу и времени",
                 checked = maintenanceReminders,
-                onCheckedChange = { maintenanceReminders = it },
+                onCheckedChange = viewModel::toggleMaintenanceReminders,
             )
         }
 
@@ -131,7 +135,7 @@ fun SettingsScreen(
                 title = "Автосинхронизация офлайн",
                 subtitle = "Скачивать обновления по Wi-Fi",
                 checked = offlineSync,
-                onCheckedChange = { offlineSync = it },
+                onCheckedChange = viewModel::toggleOfflineSync,
             )
             DividerItem()
             ClickableRow(

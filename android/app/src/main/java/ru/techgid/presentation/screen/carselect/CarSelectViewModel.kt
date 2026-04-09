@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import ru.techgid.data.repository.AppPrefsRepository
 import ru.techgid.domain.model.CarBrand
 import ru.techgid.domain.model.CarEngine
 import ru.techgid.domain.model.CarGeneration
@@ -38,6 +39,7 @@ data class CarSelectUiState(
 @HiltViewModel
 class CarSelectViewModel @Inject constructor(
     private val carRepository: CarRepository,
+    private val prefs: AppPrefsRepository,
 ) : ViewModel() {
 
     private val _selectedBrand = MutableStateFlow<CarBrand?>(null)
@@ -215,6 +217,27 @@ class CarSelectViewModel @Inject constructor(
 
     fun selectEngine(engine: CarEngine) {
         _selectedEngine.value = engine
+        saveSelection()
+    }
+
+    private fun saveSelection() {
+        val brand = _selectedBrand.value
+        val model = _selectedModel.value
+        val gen = _selectedGeneration.value
+        val engine = _selectedEngine.value
+        if (brand != null && model != null && gen != null && engine != null) {
+            val displayName = buildString {
+                append(brand.name)
+                append(' ')
+                append(model.name)
+                append(' ')
+                append(gen.yearStart)
+                engine.displacementLabel?.let { append(" · $it") }
+            }
+            viewModelScope.launch {
+                prefs.setSelectedCar(configId = engine.id, displayName = displayName)
+            }
+        }
     }
 
     fun clearError() {
