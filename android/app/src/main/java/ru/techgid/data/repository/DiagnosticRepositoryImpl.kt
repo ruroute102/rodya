@@ -119,7 +119,7 @@ class DiagnosticRepositoryImpl @Inject constructor(
                 cause = "Неисправность катушки зажигания",
                 probability = 0.60f,
                 componentName = "Катушка зажигания",
-                guideId = 3,
+                guideId = 7,
                 guideTitle = "Замена катушки зажигания",
                 checks = listOf(
                     "Проверить сопротивление первичной обмотки (0.4–0.6 Ом)",

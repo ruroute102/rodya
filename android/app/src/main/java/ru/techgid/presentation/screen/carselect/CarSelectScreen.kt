@@ -160,7 +160,7 @@ fun CarSelectScreen(
 
             PrimaryButton(
                 text = if (state.isComplete) "Показать инструкции" else "Продолжить",
-                onClick = { onShowGuides(1) },
+                onClick = { onShowGuides(state.selectedEngine?.id ?: 1) },
                 enabled = state.isComplete,
             )
 

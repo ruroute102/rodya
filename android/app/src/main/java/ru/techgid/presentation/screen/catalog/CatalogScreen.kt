@@ -32,10 +32,16 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -56,7 +62,12 @@ fun CatalogScreen(
     onBack: () -> Unit,
 ) {
     val state by viewModel.uiState.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
 
+    Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+    ) { scaffoldPadding ->
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -118,7 +129,7 @@ fun CatalogScreen(
                 ),
             )
             Spacer(modifier = Modifier.width(8.dp))
-            IconButton(onClick = { /* Сохранённые */ }) {
+            IconButton(onClick = { scope.launch { snackbarHostState.showSnackbar("Добавляйте в избранное из инструкции") } }) {
                 Icon(
                     imageVector = Icons.Filled.Lock,
                     contentDescription = "Сохранённые",
@@ -197,7 +208,7 @@ fun CatalogScreen(
                     Spacer(modifier = Modifier.height(8.dp))
                     PrimaryButton(
                         text = "Предложить инструкцию",
-                        onClick = { /* TODO */ },
+                        onClick = { scope.launch { snackbarHostState.showSnackbar("Будет доступно в следующей версии") } },
                     )
                 }
 
@@ -212,5 +223,6 @@ fun CatalogScreen(
                 item { Spacer(modifier = Modifier.height(16.dp)) }
             }
         }
+    }
     }
 }

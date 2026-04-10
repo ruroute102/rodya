@@ -456,31 +456,443 @@ class GuideRepositoryImpl @Inject constructor(
                     GuidePrecaution("info", WarningSeverity.INFO, "Утилизируйте отработанное масло в специальных пунктах приёма."),
                 ),
             )
+            2 -> GuideDetail(
+                id = 2,
+                title = "Замена топливного фильтра",
+                slug = "fuel-filter",
+                description = "Замена встроенного топливного фильтра на Audi Q3 8U 2.0 TFSI. Фильтр расположен в модуле бензонасоса под задним сиденьем.",
+                difficulty = Difficulty.EASY,
+                estimatedTimeMin = 45,
+                isVerified = true,
+                rating = 4.6f,
+                ratingCount = 45,
+                authorName = "Дмитрий",
+                componentName = "Топливная система",
+                steps = listOf(
+                    GuideStep(
+                        id = 20, stepNumber = 1,
+                        title = "Сбросьте давление и снимите заднее сиденье",
+                        description = "Извлеките предохранитель бензонасоса (F33), заведите двигатель и дождитесь, пока он заглохнет. Отключите минусовую клемму аккумулятора. Снимите подушку заднего сиденья, потянув вверх за передний край.",
+                        warnings = listOf(
+                            StepWarning("safety", WarningSeverity.DANGER, "Работы с топливом! Обеспечьте вентиляцию, не курите."),
+                        ),
+                        tools = listOf(
+                            StepTool("Ключ рожковый", "10 мм"),
+                            StepTool("Плоская отвёртка"),
+                        ),
+                        checks = listOf(
+                            StepCheck("Двигатель заглох — давление сброшено.", false),
+                            StepCheck("Клемма аккумулятора отсоединена.", false),
+                        ),
+                    ),
+                    GuideStep(
+                        id = 21, stepNumber = 2,
+                        title = "Откройте лючок доступа к насосу",
+                        description = "Очистите область вокруг крышки лючка. Открутите 4 самореза Torx T20. Отсоедините электрический разъём и топливные шланги. Подложите ветошь — немного бензина вытечет.",
+                        tools = listOf(
+                            StepTool("Отвёртка Torx", "T20"),
+                            StepTool("Ветошь безворсовая"),
+                        ),
+                        warnings = listOf(
+                            StepWarning("caution", WarningSeverity.CAUTION, "При отсоединении шлангов подставьте ветошь."),
+                        ),
+                        checks = listOf(
+                            StepCheck("Крышка снята, разъёмы отсоединены.", false),
+                        ),
+                    ),
+                    GuideStep(
+                        id = 22, stepNumber = 3,
+                        title = "Извлеките модуль и замените фильтр",
+                        description = "Поверните прижимное кольцо против часовой стрелки. Извлеките модуль, наклоняя — аккуратно проведите поплавок через отверстие. Снимите старый фильтр-сеточку с нижней части модуля и установите новый. Проверьте состояние уплотнительного кольца.",
+                        tools = listOf(
+                            StepTool("Ключ для прижимного кольца"),
+                            StepTool("Плоскогубцы"),
+                        ),
+                        consumables = listOf(
+                            StepConsumable("Фильтр топливный (сеточка)", "8K0 919 051 B", "1 шт"),
+                            StepConsumable("Уплотнительное кольцо", null, "1 шт"),
+                        ),
+                        checks = listOf(
+                            StepCheck("Новый фильтр установлен.", false),
+                            StepCheck("Уплотнительное кольцо на месте.", false),
+                        ),
+                    ),
+                    GuideStep(
+                        id = 23, stepNumber = 4,
+                        title = "Соберите и проверьте",
+                        description = "Установите модуль обратно в бак. Затяните прижимное кольцо. Подключите разъёмы и шланги. Установите крышку (4 самореза T20). Верните предохранитель F33. Подключите аккумулятор. Включите/выключите зажигание 3 раза для создания давления. Запустите двигатель.",
+                        tools = listOf(
+                            StepTool("Отвёртка Torx", "T20"),
+                            StepTool("Ключ рожковый", "10 мм"),
+                        ),
+                        checks = listOf(
+                            StepCheck("Все разъёмы подключены.", false),
+                            StepCheck("Двигатель запускается ровно.", true),
+                            StepCheck("Нет утечек топлива.", true),
+                        ),
+                    ),
+                ),
+                precautions = listOf(
+                    GuidePrecaution("safety", WarningSeverity.DANGER, "Топливо легковоспламеняемо. Работайте в проветриваемом помещении."),
+                    GuidePrecaution("info", WarningSeverity.INFO, "Заполните бак не более чем на 1/4 перед работой."),
+                ),
+            )
+            4 -> GuideDetail(
+                id = 4,
+                title = "Замена передних тормозных колодок",
+                slug = "front-brake-pads",
+                description = "Пошаговая замена передних тормозных колодок на Audi Q3 8U. Работа средней сложности, потребуется домкрат и стандартный набор ключей.",
+                difficulty = Difficulty.MEDIUM,
+                estimatedTimeMin = 60,
+                isVerified = true,
+                rating = 4.5f,
+                ratingCount = 56,
+                authorName = "Иван",
+                componentName = "Тормозная система",
+                steps = listOf(
+                    GuideStep(
+                        id = 40, stepNumber = 1,
+                        title = "Поднимите автомобиль и снимите колесо",
+                        description = "Ослабьте болты колеса (17 мм) до подъёма. Поднимите автомобиль домкратом, установите упор. Снимите колесо.",
+                        tools = listOf(
+                            StepTool("Баллонный ключ", "17 мм"),
+                            StepTool("Домкрат"),
+                            StepTool("Упор страховочный"),
+                        ),
+                        warnings = listOf(
+                            StepWarning("safety", WarningSeverity.WARNING, "Обязательно используйте страховочный упор! Не работайте только на домкрате."),
+                        ),
+                        checks = listOf(
+                            StepCheck("Автомобиль надёжно стоит на упоре.", false),
+                            StepCheck("Колесо снято.", false),
+                        ),
+                    ),
+                    GuideStep(
+                        id = 41, stepNumber = 2,
+                        title = "Снимите суппорт",
+                        description = "Открутите два направляющих болта суппорта (ключ на 13). Аккуратно снимите суппорт и подвесьте его проволокой — не допускайте нагрузки на тормозной шланг. Извлеките старые колодки.",
+                        tools = listOf(
+                            StepTool("Ключ", "13 мм"),
+                            StepTool("Проволока или крюк", "для подвешивания суппорта"),
+                        ),
+                        warnings = listOf(
+                            StepWarning("caution", WarningSeverity.CAUTION, "Не допускайте, чтобы суппорт висел на тормозном шланге!"),
+                        ),
+                        checks = listOf(
+                            StepCheck("Суппорт надёжно подвешен.", false),
+                            StepCheck("Старые колодки извлечены.", false),
+                        ),
+                    ),
+                    GuideStep(
+                        id = 42, stepNumber = 3,
+                        title = "Вдавите поршень и очистите направляющие",
+                        description = "С помощью специального приспособления или старой колодки вдавите поршень суппорта обратно. Перед этим откройте бачок тормозной жидкости — уровень поднимется. Очистите и смажьте направляющие пальцы суппорта.",
+                        tools = listOf(
+                            StepTool("Приспособление для вдавливания поршня", "или струбцина"),
+                            StepTool("Смазка для направляющих", "высокотемпературная"),
+                        ),
+                        warnings = listOf(
+                            StepWarning("caution", WarningSeverity.CAUTION, "Откройте бачок тормозной жидкости перед вдавливанием поршня."),
+                            StepWarning("info", WarningSeverity.INFO, "Проверьте уровень жидкости — при необходимости отберите шприцем лишнюю."),
+                        ),
+                        checks = listOf(
+                            StepCheck("Поршень полностью вдавлен.", false),
+                            StepCheck("Направляющие смазаны.", false),
+                        ),
+                    ),
+                    GuideStep(
+                        id = 43, stepNumber = 4,
+                        title = "Установите новые колодки",
+                        description = "Установите новые колодки в скобу суппорта. Колодка с датчиком износа — на внутреннюю сторону. Верните суппорт на место и затяните направляющие болты (25 Нм). Установите колесо, опустите автомобиль.",
+                        consumables = listOf(
+                            StepConsumable("Колодки тормозные передние", "8U0 698 151", "комплект"),
+                        ),
+                        tools = listOf(
+                            StepTool("Ключ", "13 мм"),
+                            StepTool("Динамометрический ключ", "25 Нм"),
+                            StepTool("Баллонный ключ", "17 мм"),
+                        ),
+                        checks = listOf(
+                            StepCheck("Колодки установлены правильной стороной.", false),
+                            StepCheck("Болты затянуты с правильным моментом.", false),
+                            StepCheck("Колесо установлено.", false),
+                        ),
+                    ),
+                    GuideStep(
+                        id = 44, stepNumber = 5,
+                        title = "Прокачайте тормоза и проверьте",
+                        description = "Перед началом движения несколько раз нажмите педаль тормоза до упора — поршень должен прижать колодки к диску. Педаль станет жёсткой. Проверьте уровень тормозной жидкости. Закройте бачок. Проедьтесь на малой скорости, проверяя торможение.",
+                        checks = listOf(
+                            StepCheck("Педаль тормоза жёсткая.", false),
+                            StepCheck("Уровень тормозной жидкости в норме.", false),
+                            StepCheck("Бачок закрыт.", false),
+                            StepCheck("Торможение эффективное, без посторонних звуков.", true),
+                            StepCheck("Нет вибрации при торможении.", true),
+                        ),
+                    ),
+                ),
+                precautions = listOf(
+                    GuidePrecaution("safety", WarningSeverity.WARNING, "Тормоза — критически важная система. При любых сомнениях обратитесь в сервис."),
+                    GuidePrecaution("info", WarningSeverity.INFO, "Первые 200 км избегайте резких торможений — колодки должны притереться."),
+                ),
+            )
+            5 -> GuideDetail(
+                id = 5,
+                title = "Замена воздушного фильтра",
+                slug = "air-filter",
+                description = "Замена воздушного фильтра двигателя на Audi Q3 8U 2.0 TFSI. Простейшая процедура, не требует инструментов.",
+                difficulty = Difficulty.EASY,
+                estimatedTimeMin = 15,
+                rating = 4.9f,
+                ratingCount = 120,
+                authorName = "Сергей",
+                componentName = "Двигатель",
+                steps = listOf(
+                    GuideStep(
+                        id = 50, stepNumber = 1,
+                        title = "Откройте корпус воздушного фильтра",
+                        description = "Корпус расположен в левой части моторного отсека. Отщёлкните 4 зажима по периметру крышки. Поднимите крышку вверх.",
+                        checks = listOf(StepCheck("Крышка корпуса снята.", false)),
+                    ),
+                    GuideStep(
+                        id = 51, stepNumber = 2,
+                        title = "Замените фильтр",
+                        description = "Извлеките старый фильтрующий элемент. Протрите внутреннюю поверхность корпуса влажной ветошью. Установите новый фильтр — убедитесь, что он плотно сидит в пазах.",
+                        consumables = listOf(
+                            StepConsumable("Воздушный фильтр", "8U0 129 620 D", "1 шт"),
+                        ),
+                        tools = listOf(StepTool("Ветошь влажная")),
+                        checks = listOf(
+                            StepCheck("Корпус очищен от пыли и листьев.", false),
+                            StepCheck("Новый фильтр установлен ровно.", false),
+                        ),
+                    ),
+                    GuideStep(
+                        id = 52, stepNumber = 3,
+                        title = "Закройте корпус",
+                        description = "Опустите крышку и защёлкните все 4 зажима. Убедитесь, что крышка плотно прилегает по всему периметру.",
+                        checks = listOf(
+                            StepCheck("Все 4 зажима защёлкнуты.", false),
+                            StepCheck("Крышка не болтается.", true),
+                        ),
+                    ),
+                ),
+            )
+            6 -> GuideDetail(
+                id = 6,
+                title = "Замена ремня ГРМ",
+                slug = "timing-belt",
+                description = "Замена ремня газораспределительного механизма на Audi Q3 8U 2.0 TFSI. Сложная работа, требует специального инструмента и опыта.",
+                difficulty = Difficulty.HARD,
+                estimatedTimeMin = 240,
+                isVerified = true,
+                rating = 4.0f,
+                ratingCount = 8,
+                authorName = "Алексей",
+                componentName = "Двигатель",
+                steps = listOf(
+                    GuideStep(
+                        id = 60, stepNumber = 1,
+                        title = "Снимите переднюю часть автомобиля",
+                        description = "Снимите передний бампер, решётку радиатора и замок капота для доступа к ремню. Слейте охлаждающую жидкость. Снимите ремень генератора/кондиционера.",
+                        tools = listOf(
+                            StepTool("Набор Torx", "T25, T30, T45"),
+                            StepTool("Ключи", "10, 13, 16 мм"),
+                            StepTool("Ёмкость для ОЖ", "6+ литров"),
+                        ),
+                        warnings = listOf(
+                            StepWarning("safety", WarningSeverity.DANGER, "Сложная работа! При неправильной установке меток — поршни встретятся с клапанами."),
+                        ),
+                        checks = listOf(StepCheck("Доступ к ремню ГРМ открыт.", false)),
+                    ),
+                    GuideStep(
+                        id = 61, stepNumber = 2,
+                        title = "Установите метки ГРМ",
+                        description = "Проверните коленвал до совмещения меток. Зафиксируйте коленвал и распредвалы специальными фиксаторами. Ещё раз проверьте совмещение всех меток.",
+                        tools = listOf(
+                            StepTool("Фиксатор коленвала", "T10340"),
+                            StepTool("Фиксаторы распредвалов", "T10339"),
+                            StepTool("Торцевая головка", "для коленвала"),
+                        ),
+                        warnings = listOf(
+                            StepWarning("safety", WarningSeverity.DANGER, "Метки ОБЯЗАНЫ совпадать! Перепроверьте перед снятием ремня."),
+                        ),
+                        checks = listOf(
+                            StepCheck("Метки коленвала совмещены.", false),
+                            StepCheck("Метки распредвалов совмещены.", false),
+                            StepCheck("Фиксаторы установлены.", false),
+                        ),
+                    ),
+                    GuideStep(
+                        id = 62, stepNumber = 3,
+                        title = "Снимите старый ремень и ролики",
+                        description = "Ослабьте натяжитель. Снимите ремень ГРМ. Замените натяжной и обводной ролики. Осмотрите водяной насос — при необходимости замените.",
+                        consumables = listOf(
+                            StepConsumable("Комплект ГРМ (ремень + ролики)", "INA 530 0550 10", "1 комплект"),
+                            StepConsumable("Водяной насос", "06L 121 012 A", "при необходимости"),
+                        ),
+                        checks = listOf(
+                            StepCheck("Старый ремень и ролики сняты.", false),
+                            StepCheck("Новые ролики установлены.", false),
+                        ),
+                    ),
+                    GuideStep(
+                        id = 63, stepNumber = 4,
+                        title = "Установите новый ремень",
+                        description = "Наденьте новый ремень, соблюдая направление стрелок. Отпустите натяжитель — он автоматически натянет ремень. Извлеките фиксаторы. Проверните коленвал на 2 полных оборота вручную. Снова проверьте метки.",
+                        warnings = listOf(
+                            StepWarning("safety", WarningSeverity.DANGER, "После установки проверните вал ВРУЧНУЮ — никогда стартером!"),
+                        ),
+                        checks = listOf(
+                            StepCheck("Ремень установлен по стрелкам.", false),
+                            StepCheck("Натяжитель работает.", false),
+                            StepCheck("Коленвал прокручен на 2 оборота.", false),
+                            StepCheck("Метки совпадают после прокрутки.", false),
+                        ),
+                    ),
+                    GuideStep(
+                        id = 64, stepNumber = 5,
+                        title = "Соберите всё обратно",
+                        description = "Установите защитные кожухи, ремень генератора, залейте охлаждающую жидкость. Соберите переднюю часть автомобиля. Запустите двигатель и прислушайтесь.",
+                        checks = listOf(
+                            StepCheck("Охлаждающая жидкость залита.", false),
+                            StepCheck("Двигатель работает ровно.", true),
+                            StepCheck("Нет посторонних звуков.", true),
+                            StepCheck("Нет утечек ОЖ.", true),
+                        ),
+                    ),
+                ),
+                precautions = listOf(
+                    GuidePrecaution("safety", WarningSeverity.DANGER, "Ошибка при установке ГРМ приведёт к дорогостоящему ремонту двигателя!"),
+                    GuidePrecaution("info", WarningSeverity.INFO, "Если нет опыта — доверьте эту работу профессионалам."),
+                ),
+            )
+            7 -> GuideDetail(
+                id = 7,
+                title = "Замена катушки зажигания",
+                slug = "ignition-coil",
+                description = "Замена индивидуальной катушки зажигания на Audi Q3 8U 2.0 TFSI. Простая процедура — 15-20 минут.",
+                difficulty = Difficulty.EASY,
+                estimatedTimeMin = 20,
+                rating = 4.7f,
+                ratingCount = 34,
+                authorName = "Павел",
+                componentName = "Система зажигания",
+                steps = listOf(
+                    GuideStep(
+                        id = 70, stepNumber = 1,
+                        title = "Снимите пластиковую крышку двигателя",
+                        description = "Потяните крышку двигателя вверх — она держится на 4 резиновых втулках. Под ней — 4 катушки зажигания.",
+                        checks = listOf(StepCheck("Крышка двигателя снята.", false)),
+                    ),
+                    GuideStep(
+                        id = 71, stepNumber = 2,
+                        title = "Замените неисправную катушку",
+                        description = "Отсоедините электрический разъём от неисправной катушки. Открутите крепёжный болт (Torx T30). Извлеките катушку движением вверх. Установите новую в обратном порядке.",
+                        tools = listOf(
+                            StepTool("Отвёртка Torx", "T30"),
+                        ),
+                        consumables = listOf(
+                            StepConsumable("Катушка зажигания", "06H 905 110 G", "1 шт"),
+                        ),
+                        checks = listOf(
+                            StepCheck("Новая катушка установлена.", false),
+                            StepCheck("Разъём подключён.", false),
+                            StepCheck("Болт затянут.", false),
+                        ),
+                    ),
+                    GuideStep(
+                        id = 72, stepNumber = 3,
+                        title = "Проверьте работу",
+                        description = "Установите крышку двигателя. Запустите двигатель. Пропуски зажигания должны исчезнуть, Check Engine погаснет через несколько циклов.",
+                        checks = listOf(
+                            StepCheck("Двигатель работает ровно.", true),
+                            StepCheck("Нет пропусков зажигания.", true),
+                        ),
+                    ),
+                ),
+            )
+            8 -> GuideDetail(
+                id = 8,
+                title = "Замена стойки стабилизатора",
+                slug = "stabilizer-link",
+                description = "Замена стойки (тяги) переднего стабилизатора поперечной устойчивости на Audi Q3 8U. Типичная причина стуков в подвеске.",
+                difficulty = Difficulty.MEDIUM,
+                estimatedTimeMin = 45,
+                rating = 4.3f,
+                ratingCount = 22,
+                authorName = "Максим",
+                componentName = "Подвеска",
+                steps = listOf(
+                    GuideStep(
+                        id = 80, stepNumber = 1,
+                        title = "Поднимите автомобиль и снимите колесо",
+                        description = "Ослабьте болты колеса. Поднимите автомобиль домкратом, установите страховочный упор. Снимите колесо.",
+                        tools = listOf(
+                            StepTool("Баллонный ключ", "17 мм"),
+                            StepTool("Домкрат"),
+                            StepTool("Упор страховочный"),
+                        ),
+                        checks = listOf(StepCheck("Автомобиль на упоре, колесо снято.", false)),
+                    ),
+                    GuideStep(
+                        id = 81, stepNumber = 2,
+                        title = "Открутите старую стойку",
+                        description = "Стойка крепится двумя гайками — сверху к стойке амортизатора, снизу к стабилизатору. Используйте ключ на 16 и внутренний Torx T50 для удержания пальца от проворачивания.",
+                        tools = listOf(
+                            StepTool("Ключ рожковый", "16 мм"),
+                            StepTool("Torx", "T50"),
+                            StepTool("Проникающая смазка", "WD-40"),
+                        ),
+                        warnings = listOf(
+                            StepWarning("caution", WarningSeverity.CAUTION, "Нанесите проникающую смазку за 10-15 минут до откручивания."),
+                        ),
+                        checks = listOf(StepCheck("Старая стойка снята.", false)),
+                    ),
+                    GuideStep(
+                        id = 82, stepNumber = 3,
+                        title = "Установите новую стойку",
+                        description = "Установите новую стойку стабилизатора. Затяните гайки моментом 50 Нм. Установите колесо, опустите автомобиль. Протяните колёсные болты (120 Нм).",
+                        consumables = listOf(
+                            StepConsumable("Стойка стабилизатора", "5Q0 411 315 A", "1 шт"),
+                        ),
+                        tools = listOf(
+                            StepTool("Динамометрический ключ", "50 Нм / 120 Нм"),
+                            StepTool("Баллонный ключ", "17 мм"),
+                        ),
+                        checks = listOf(
+                            StepCheck("Гайки затянуты с правильным моментом.", false),
+                            StepCheck("Колесо установлено и протянуто.", false),
+                            StepCheck("Стук при проезде неровностей исчез.", true),
+                        ),
+                    ),
+                ),
+            )
             else -> GuideDetail(
                 id = guideId,
                 title = "Инструкция #$guideId",
                 slug = "guide-$guideId",
-                description = "Подробная инструкция. Подключитесь к серверу для загрузки полного содержания.",
+                description = "Подробная инструкция по ремонту.",
                 difficulty = Difficulty.MEDIUM,
                 estimatedTimeMin = 60,
                 authorName = "ТехГид",
                 componentName = "Общее",
                 steps = listOf(
                     GuideStep(
-                        id = 100, stepNumber = 1,
+                        id = 100 + guideId * 10, stepNumber = 1,
                         title = "Подготовка к работе",
                         description = "Подготовьте инструменты и рабочее место. Убедитесь, что у вас есть все необходимые запчасти.",
                         tools = listOf(StepTool("Набор инструментов", "стандартный")),
                         checks = listOf(StepCheck("Все инструменты на месте.", false)),
                     ),
                     GuideStep(
-                        id = 101, stepNumber = 2,
+                        id = 101 + guideId * 10, stepNumber = 2,
                         title = "Выполнение работы",
-                        description = "Следуйте рекомендациям производителя. Подключитесь к серверу для получения подробных шагов.",
+                        description = "Следуйте рекомендациям производителя.",
                         checks = listOf(StepCheck("Работа выполнена.", false)),
                     ),
                     GuideStep(
-                        id = 102, stepNumber = 3,
+                        id = 102 + guideId * 10, stepNumber = 3,
                         title = "Проверка результата",
                         description = "Проверьте результат работы. Убедитесь, что всё функционирует корректно.",
                         checks = listOf(

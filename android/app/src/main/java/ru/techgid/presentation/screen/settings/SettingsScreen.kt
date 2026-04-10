@@ -31,6 +31,10 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Snackbar
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
@@ -39,8 +43,10 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.hilt.navigation.compose.hiltViewModel
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -59,7 +65,15 @@ fun SettingsScreen(
     val notifications = state.notifications
     val maintenanceReminders = state.maintenanceReminders
     val offlineSync = state.offlineSync
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+    val comingSoon: () -> Unit = {
+        scope.launch { snackbarHostState.showSnackbar("Будет доступно в следующей версии") }
+    }
 
+    Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+    ) { scaffoldPadding ->
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -105,7 +119,7 @@ fun SettingsScreen(
                 icon = Icons.Filled.Settings,
                 title = "Язык",
                 subtitle = "Русский",
-                onClick = {},
+                onClick = comingSoon,
             )
         }
 
@@ -142,14 +156,14 @@ fun SettingsScreen(
                 icon = Icons.Filled.Info,
                 title = "Использовано места",
                 subtitle = "124 МБ из 1 ГБ",
-                onClick = {},
+                onClick = comingSoon,
             )
             DividerItem()
             ClickableRow(
                 icon = Icons.Filled.Info,
                 title = "Очистить кэш",
                 subtitle = "Освободить ~32 МБ",
-                onClick = {},
+                onClick = comingSoon,
             )
         }
 
@@ -159,14 +173,14 @@ fun SettingsScreen(
                 icon = Icons.Filled.Lock,
                 title = "Сменить пароль",
                 subtitle = null,
-                onClick = {},
+                onClick = comingSoon,
             )
             DividerItem()
             ClickableRow(
                 icon = Icons.Filled.Lock,
                 title = "Конфиденциальность",
                 subtitle = null,
-                onClick = {},
+                onClick = comingSoon,
             )
         }
 
@@ -176,18 +190,19 @@ fun SettingsScreen(
                 icon = Icons.Filled.Star,
                 title = "Оценить приложение",
                 subtitle = null,
-                onClick = {},
+                onClick = comingSoon,
             )
             DividerItem()
             ClickableRow(
                 icon = Icons.Filled.Info,
                 title = "Версия",
                 subtitle = "0.1.0 (debug)",
-                onClick = {},
+                onClick = comingSoon,
             )
         }
 
         Spacer(Modifier.height(24.dp))
+    }
     }
 }
 

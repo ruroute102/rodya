@@ -121,9 +121,6 @@ fun TechGidNavHost() {
                     onGuideClick = { guideId ->
                         navController.navigate(NavRoute.GuideDetail.create(guideId))
                     },
-                    onSymptomClick = {
-                        navController.navigate(NavRoute.Diagnostic.create(1))
-                    },
                 )
             }
 

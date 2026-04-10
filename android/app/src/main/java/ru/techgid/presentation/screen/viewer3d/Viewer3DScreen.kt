@@ -38,10 +38,13 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -52,8 +55,11 @@ import androidx.compose.ui.unit.sp
 
 @Composable
 fun Viewer3DScreen(
+    viewModel: Viewer3DViewModel = hiltViewModel(),
     onBack: () -> Unit = {},
 ) {
+    val carName by viewModel.carName.collectAsState()
+    var zoomLevel by remember { mutableFloatStateOf(1f) }
     val parts = remember {
         listOf(
             "Двигатель", "Топливная система", "Тормоза",
@@ -100,7 +106,7 @@ fun Viewer3DScreen(
                     color = MaterialTheme.colorScheme.onBackground,
                 )
                 Text(
-                    text = "Audi Q3 2011 · 2.0 TFSI",
+                    text = carName,
                     fontSize = 12.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -130,7 +136,7 @@ fun Viewer3DScreen(
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier
-                        .size(140.dp)
+                        .size((140 * zoomLevel).dp)
                         .rotate(rotation),
                 )
                 Spacer(Modifier.height(20.dp))
@@ -155,10 +161,9 @@ fun Viewer3DScreen(
                     .padding(16.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                ControlButton(Icons.Filled.ZoomIn) {}
-                ControlButton(Icons.Filled.ZoomOut) {}
-                ControlButton(Icons.Filled.Refresh) {}
-                ControlButton(Icons.Filled.Settings) {}
+                ControlButton(Icons.Filled.ZoomIn) { zoomLevel = (zoomLevel + 0.2f).coerceAtMost(3f) }
+                ControlButton(Icons.Filled.ZoomOut) { zoomLevel = (zoomLevel - 0.2f).coerceAtLeast(0.4f) }
+                ControlButton(Icons.Filled.Refresh) { zoomLevel = 1f; selectedPart = "Двигатель" }
             }
         }
 
@@ -208,9 +213,13 @@ fun Viewer3DScreen(
                 Spacer(Modifier.height(8.dp))
                 Text(
                     text = when (selectedPart) {
-                        "Двигатель" -> "2.0 TFSI, 4 цилиндра, 211 л.с., непосредственный впрыск, турбонаддув."
-                        "Топливная система" -> "Электробензонасос в баке, давление 4.5 бар, инжекторы непосредственного впрыска."
-                        "Тормоза" -> "Дисковые передние/задние, ABS, ESP, диаметр диска 320 мм."
+                        "Двигатель" -> "2.0 TFSI, 4 цилиндра, 211 л.с., непосредственный впрыск, турбонаддув. Цепь ГРМ, интеркулер."
+                        "Топливная система" -> "Электробензонасос в баке, давление 4.5 бар, инжекторы непосредственного впрыска. Бак 60 л."
+                        "Тормоза" -> "Дисковые передние/задние, ABS, ESP, диаметр переднего диска 320 мм. Суппорт однопоршневый."
+                        "Подвеска" -> "Передняя — McPherson, задняя — многорычажная. Стабилизаторы поперечной устойчивости спереди и сзади."
+                        "Электрика" -> "Аккумулятор 70 А·ч, генератор 140 А, CAN-шина. Блок предохранителей под капотом и в салоне."
+                        "Кузов" -> "Несущий кузов, оцинковка, лакокрасочное покрытие в 4 слоя. Зоны программируемой деформации."
+                        "Салон" -> "Климат-контроль, мультимедиа MMI, электрорегулировка сидений, подогрев передних сидений."
                         else -> "Подробная информация о выбранном узле автомобиля."
                     },
                     fontSize = 13.sp,

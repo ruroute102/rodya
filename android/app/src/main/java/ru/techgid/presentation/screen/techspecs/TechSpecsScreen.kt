@@ -31,10 +31,12 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -60,8 +62,10 @@ private data class TechSpec(
 
 @Composable
 fun TechSpecsScreen(
+    viewModel: TechSpecsViewModel = hiltViewModel(),
     onBack: () -> Unit = {},
 ) {
+    val carName by viewModel.carName.collectAsState()
     val categories = remember {
         listOf(
             TechSpecCategory(
@@ -154,7 +158,7 @@ fun TechSpecsScreen(
                     color = MaterialTheme.colorScheme.onBackground,
                 )
                 Text(
-                    text = "Audi Q3 2011 · 2.0 TFSI",
+                    text = carName,
                     fontSize = 12.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )

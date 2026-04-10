@@ -150,15 +150,16 @@ fun ProfileScreen(
         // Activity
         ProfileSection(title = "Активность") {
             ProfileInfoRow(
-                icon = Icons.AutoMirrored.Filled.Comment,
-                label = "Мои комментарии",
-                trailingText = "${state.commentsCount}",
+                icon = Icons.Filled.Star,
+                label = "Избранные инструкции",
+                trailingText = "${state.favoritesCount}",
             )
             HorizontalDivider(color = TechGidTheme.extendedColors.divider)
             ProfileInfoRow(
-                icon = Icons.Filled.Star,
-                label = "Мои оценки",
-                trailingText = "0",
+                icon = Icons.AutoMirrored.Filled.Comment,
+                label = "Записей в истории ТО",
+                trailingText = "${state.historyCount}",
+                onClick = onServiceHistory,
             )
         }
 
