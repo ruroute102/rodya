@@ -42,6 +42,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
@@ -59,6 +60,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import coil.compose.AsyncImage
 import ru.techgid.domain.model.Comment
 import ru.techgid.presentation.components.WarningBlock
 import ru.techgid.presentation.theme.TechGidColors
@@ -142,6 +144,7 @@ fun GuideDetailScreen(
         } else {
             val currentStep = state.currentStep
 
+            // Content
             LazyColumn(
                 modifier = Modifier
                     .weight(1f)
@@ -188,65 +191,76 @@ fun GuideDetailScreen(
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(220.dp)
+                            .height(240.dp)
                             .clip(RoundedCornerShape(16.dp))
                             .background(MaterialTheme.colorScheme.surfaceVariant),
                         contentAlignment = Alignment.Center,
                     ) {
-                        Text(
-                            text = "3D / Иллюстрация\nШаг ${state.currentStepIndex + 1}",
-                            style = MaterialTheme.typography.titleLarge,
-                            color = TechGidTheme.extendedColors.textTertiary,
-                            textAlign = TextAlign.Center,
-                        )
-                    }
-                }
-
-                // Step navigation
-                item {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        if (state.canGoPrev) {
-                            IconButton(onClick = { viewModel.prevStep() }, Modifier.size(40.dp)) {
-                                Icon(Icons.AutoMirrored.Filled.ArrowBack, "Предыдущий шаг", Modifier.size(20.dp))
-                            }
+                        if (currentStep?.imageUrl != null) {
+                            AsyncImage(
+                                model = currentStep.imageUrl,
+                                contentDescription = currentStep.title,
+                                modifier = Modifier.fillMaxSize(),
+                                contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                            )
                         } else {
-                            Spacer(Modifier.size(40.dp))
-                        }
-
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp),
-                        ) {
-                            for (i in 0 until state.totalSteps) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(if (i == state.currentStepIndex) 10.dp else 8.dp)
-                                        .clip(CircleShape)
-                                        .background(
-                                            if (i == state.currentStepIndex) MaterialTheme.colorScheme.primary
-                                            else TechGidTheme.extendedColors.divider
-                                        )
-                                        .clickable {
-                                            if (i < state.currentStepIndex) {
-                                                repeat(state.currentStepIndex - i) { viewModel.prevStep() }
-                                            } else {
-                                                repeat(i - state.currentStepIndex) { viewModel.nextStep() }
-                                            }
-                                        },
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Icon(
+                                    imageVector = Icons.Filled.Build,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(48.dp),
+                                    tint = TechGidTheme.extendedColors.textTertiary,
+                                )
+                                Spacer(Modifier.height(8.dp))
+                                Text(
+                                    text = "Иллюстрация · Шаг ${state.currentStepIndex + 1}",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = TechGidTheme.extendedColors.textTertiary,
                                 )
                             }
                         }
+                    }
+                }
 
-                        if (state.canGoNext) {
-                            IconButton(onClick = { viewModel.nextStep() }, Modifier.size(40.dp)) {
-                                Icon(Icons.AutoMirrored.Filled.ArrowForward, "Следующий шаг", Modifier.size(20.dp))
-                            }
-                        } else {
-                            Spacer(Modifier.size(40.dp))
+                // Step navigation buttons
+                item {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
+                        OutlinedButton(
+                            onClick = { if (state.canGoPrev) viewModel.prevStep() },
+                            modifier = Modifier.weight(1f),
+                            enabled = state.canGoPrev,
+                            shape = RoundedCornerShape(12.dp),
+                        ) {
+                            Icon(
+                                Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp),
+                            )
+                            Spacer(Modifier.width(4.dp))
+                            Text(
+                                text = "Назад",
+                                style = MaterialTheme.typography.labelLarge,
+                            )
+                        }
+                        OutlinedButton(
+                            onClick = { if (state.canGoNext) viewModel.nextStep() },
+                            modifier = Modifier.weight(1f),
+                            enabled = state.canGoNext,
+                            shape = RoundedCornerShape(12.dp),
+                        ) {
+                            Text(
+                                text = "Нест. шаг",
+                                style = MaterialTheme.typography.labelLarge,
+                            )
+                            Spacer(Modifier.width(4.dp))
+                            Icon(
+                                Icons.AutoMirrored.Filled.ArrowForward,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp),
+                            )
                         }
                     }
                 }
@@ -367,15 +381,28 @@ fun GuideDetailScreen(
                     }
                 }
 
-                // Divider
-                item { HorizontalDivider(color = TechGidTheme.extendedColors.divider) }
-
-                // Comments section
+                // Divider before comments
                 item {
-                    Text(
-                        text = "Комментарии (${state.comments.size})",
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
-                    )
+                    HorizontalDivider(color = TechGidTheme.extendedColors.divider)
+                }
+
+                // Comments header
+                item {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            text = "Комментарии",
+                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            text = "${state.comments.size}",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = TechGidTheme.extendedColors.textTertiary,
+                        )
+                    }
                 }
 
                 if (state.comments.isEmpty()) {
@@ -392,40 +419,48 @@ fun GuideDetailScreen(
                     }
                 }
 
-                // Comment input
-                item {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        OutlinedTextField(
-                            value = state.commentText,
-                            onValueChange = { viewModel.updateCommentText(it) },
-                            modifier = Modifier.weight(1f),
-                            placeholder = { Text("Добавить комментарий...") },
-                            singleLine = true,
-                            shape = RoundedCornerShape(20.dp),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedContainerColor = TechGidTheme.extendedColors.cardBackground,
-                                unfocusedContainerColor = TechGidTheme.extendedColors.cardBackground,
-                                focusedBorderColor = MaterialTheme.colorScheme.primary,
-                                unfocusedBorderColor = TechGidTheme.extendedColors.cardBorder,
-                            ),
-                        )
-                        Spacer(Modifier.width(8.dp))
-                        IconButton(
-                            onClick = { viewModel.addComment() },
-                            enabled = state.commentText.isNotBlank(),
-                        ) {
-                            Icon(
-                                Icons.AutoMirrored.Filled.Send,
-                                "Отправить",
-                                tint = if (state.commentText.isNotBlank()) MaterialTheme.colorScheme.primary
-                                else TechGidTheme.extendedColors.textTertiary,
-                            )
-                        }
-                    }
-                    Spacer(Modifier.height(16.dp))
+                item { Spacer(Modifier.height(8.dp)) }
+            }
+
+            // Bottom comment input - pinned at bottom
+            HorizontalDivider(color = TechGidTheme.extendedColors.divider)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(MaterialTheme.colorScheme.surface)
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                OutlinedTextField(
+                    value = state.commentText,
+                    onValueChange = { viewModel.updateCommentText(it) },
+                    modifier = Modifier.weight(1f),
+                    placeholder = { Text("Добавить комментарий...", style = MaterialTheme.typography.bodyMedium) },
+                    singleLine = true,
+                    shape = RoundedCornerShape(20.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedContainerColor = TechGidTheme.extendedColors.cardBackground,
+                        unfocusedContainerColor = TechGidTheme.extendedColors.cardBackground,
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = TechGidTheme.extendedColors.cardBorder,
+                    ),
+                )
+                Spacer(Modifier.width(4.dp))
+                Text(
+                    text = "${state.comments.size}",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = TechGidTheme.extendedColors.textTertiary,
+                )
+                IconButton(
+                    onClick = { viewModel.addComment() },
+                    enabled = state.commentText.isNotBlank(),
+                ) {
+                    Icon(
+                        Icons.AutoMirrored.Filled.Send,
+                        "Отправить",
+                        tint = if (state.commentText.isNotBlank()) MaterialTheme.colorScheme.primary
+                        else TechGidTheme.extendedColors.textTertiary,
+                    )
                 }
             }
         }
@@ -489,12 +524,15 @@ private fun CommentItem(comment: Comment) {
         }
         Spacer(Modifier.width(10.dp))
         Column(Modifier.weight(1f)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
                 Text(
                     text = comment.userName,
                     style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
                 )
-                Spacer(Modifier.width(8.dp))
                 Text(
                     text = comment.createdAt,
                     style = MaterialTheme.typography.labelSmall,

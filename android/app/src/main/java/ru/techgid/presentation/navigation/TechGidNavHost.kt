@@ -16,10 +16,13 @@ import ru.techgid.presentation.screen.auth.AuthScreen
 import ru.techgid.presentation.screen.carselect.CarSelectScreen
 import ru.techgid.presentation.screen.catalog.CatalogScreen
 import ru.techgid.presentation.screen.diagnostic.DiagnosticScreen
+import ru.techgid.presentation.screen.editprofile.EditProfileScreen
+import ru.techgid.presentation.screen.favorites.FavoritesScreen
 import ru.techgid.presentation.screen.guide.GuideDetailScreen
 import ru.techgid.presentation.screen.history.ServiceHistoryScreen
 import ru.techgid.presentation.screen.home.HomeScreen
 import ru.techgid.presentation.screen.profile.ProfileScreen
+import ru.techgid.presentation.screen.reminders.RemindersScreen
 import ru.techgid.presentation.screen.search.SearchScreen
 import ru.techgid.presentation.screen.settings.SettingsScreen
 import ru.techgid.presentation.screen.techspecs.TechSpecsScreen
@@ -78,6 +81,7 @@ fun TechGidNavHost() {
                     onTechSpecs = { navController.navigate(NavRoute.TechSpecs.route) },
                     onViewer3D = { navController.navigate(NavRoute.Viewer3D.route) },
                     onServiceHistory = { navController.navigate(NavRoute.ServiceHistory.route) },
+                    onReminders = { navController.navigate(NavRoute.Reminders.route) },
                     onGuideClick = { guideId ->
                         navController.navigate(NavRoute.GuideDetail.create(guideId))
                     },
@@ -195,7 +199,36 @@ fun TechGidNavHost() {
                     onServiceHistory = {
                         navController.navigate(NavRoute.ServiceHistory.route)
                     },
+                    onEditProfile = {
+                        navController.navigate(NavRoute.EditProfile.route)
+                    },
+                    onFavorites = {
+                        navController.navigate(NavRoute.Favorites.route)
+                    },
+                    onReminders = {
+                        navController.navigate(NavRoute.Reminders.route)
+                    },
                 )
+            }
+
+            // Favorites
+            composable(NavRoute.Favorites.route) {
+                FavoritesScreen(
+                    onBack = { navController.popBackStack() },
+                    onGuideClick = { guideId ->
+                        navController.navigate(NavRoute.GuideDetail.create(guideId))
+                    },
+                )
+            }
+
+            // Edit profile
+            composable(NavRoute.EditProfile.route) {
+                EditProfileScreen(onBack = { navController.popBackStack() })
+            }
+
+            // Reminders
+            composable(NavRoute.Reminders.route) {
+                RemindersScreen(onBack = { navController.popBackStack() })
             }
         }
     }

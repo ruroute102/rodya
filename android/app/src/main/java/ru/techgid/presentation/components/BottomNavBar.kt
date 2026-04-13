@@ -45,6 +45,7 @@ fun BottomNavBar(
                         modifier = Modifier.size(24.dp),
                     )
                 },
+                alwaysShowLabel = false,
                 label = {
                     Text(
                         text = item.label,

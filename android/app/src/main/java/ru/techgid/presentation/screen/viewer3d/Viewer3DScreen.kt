@@ -20,15 +20,16 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.filled.ZoomIn
 import androidx.compose.material.icons.filled.ZoomOut
 import androidx.compose.material3.Card
@@ -36,6 +37,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -52,6 +54,9 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import ru.techgid.presentation.components.DifficultyBadge
+import ru.techgid.presentation.theme.TechGidTheme
+import ru.techgid.domain.model.Difficulty
 
 @Composable
 fun Viewer3DScreen(
@@ -62,18 +67,24 @@ fun Viewer3DScreen(
     var zoomLevel by remember { mutableFloatStateOf(1f) }
     val parts = remember {
         listOf(
-            "Двигатель", "Топливная система", "Тормоза",
-            "Подвеска", "Электрика", "Кузов", "Салон",
+            PartInfo("Двигатель", "2.0 TFSI", "Моторный отсек", "2.0 TFSI, 4 цилиндра, 211 л.с., непосредственный впрыск, турбонаддув. Цепь ГРМ, интеркулер.", Difficulty.MEDIUM),
+            PartInfo("Топливная система", "Топливный насос", "Заднее сиденье · доступ снизу", "Электробензонасос в баке, давление 4.5 бар, инжекторы непосредственного впрыска. Бак 60 л.", Difficulty.MEDIUM),
+            PartInfo("Тормоза", "Тормозные колодки", "Колёсные арки", "Дисковые передние/задние, ABS, ESP, диаметр переднего диска 320 мм. Суппорт однопоршневый.", Difficulty.EASY),
+            PartInfo("Подвеска", "McPherson / Многорычажная", "Колёсные арки · днище", "Передняя — McPherson, задняя — многорычажная. Стабилизаторы поперечной устойчивости.", Difficulty.HARD),
+            PartInfo("Электрика", "CAN-шина", "Блок предохранителей", "Аккумулятор 70 А·ч, генератор 140 А, CAN-шина. Блок предохранителей под капотом и в салоне.", Difficulty.MEDIUM),
+            PartInfo("Кузов", "Несущий кузов", "Наружные панели", "Несущий кузов, оцинковка, лакокрасочное покрытие в 4 слоя. Зоны программируемой деформации.", Difficulty.EXPERT),
+            PartInfo("Салон", "Климат-контроль", "Торпедо · центральная консоль", "Климат-контроль, мультимедиа MMI, электрорегулировка сидений, подогрев передних сидений.", Difficulty.EASY),
         )
     }
-    var selectedPart by remember { mutableStateOf("Двигатель") }
+    var selectedPartIndex by remember { mutableStateOf(1) } // Default to fuel system
+    val selectedPart = parts[selectedPartIndex]
 
     val infiniteTransition = rememberInfiniteTransition(label = "rotate")
     val rotation by infiniteTransition.animateFloat(
         initialValue = 0f,
         targetValue = 360f,
         animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 8000, easing = LinearEasing),
+            animation = tween(durationMillis = 12000, easing = LinearEasing),
             repeatMode = RepeatMode.Restart,
         ),
         label = "rotation",
@@ -85,10 +96,11 @@ fun Viewer3DScreen(
             .background(MaterialTheme.colorScheme.background)
             .statusBarsPadding(),
     ) {
+        // Top bar
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 8.dp, vertical = 8.dp),
+                .padding(horizontal = 4.dp, vertical = 4.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             IconButton(onClick = onBack) {
@@ -98,161 +110,186 @@ fun Viewer3DScreen(
                     tint = MaterialTheme.colorScheme.onBackground,
                 )
             }
-            Column(modifier = Modifier.padding(start = 4.dp).weight(1f)) {
-                Text(
-                    text = "3D-модель",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onBackground,
-                )
-                Text(
-                    text = carName,
-                    fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
+            Spacer(Modifier.weight(1f))
+            Text(
+                text = carName,
+                style = MaterialTheme.typography.titleSmall,
+                color = TechGidTheme.extendedColors.textTertiary,
+            )
+            Spacer(Modifier.weight(1f))
+            // Placeholder for right-side alignment
+            Spacer(Modifier.size(48.dp))
         }
 
-        // Заглушка 3D-просмотрщика
+        // 3D Viewport
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(360.dp)
-                .padding(16.dp)
+                .weight(1f)
+                .padding(horizontal = 16.dp)
                 .clip(RoundedCornerShape(20.dp))
                 .background(
-                    androidx.compose.ui.graphics.Brush.verticalGradient(
+                    brush = androidx.compose.ui.graphics.Brush.verticalGradient(
                         listOf(
-                            MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                            MaterialTheme.colorScheme.primary.copy(alpha = 0.06f),
+                            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
                             MaterialTheme.colorScheme.surface,
                         )
                     )
                 ),
             contentAlignment = Alignment.Center,
         ) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Icon(
-                    imageVector = Icons.Filled.DirectionsCar,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier
-                        .size((140 * zoomLevel).dp)
-                        .rotate(rotation),
-                )
-                Spacer(Modifier.height(20.dp))
-                Text(
-                    text = selectedPart,
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    text = "Интерактивная 3D-модель",
-                    fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-
-            // Управление
-            Row(
+            Icon(
+                imageVector = Icons.Filled.DirectionsCar,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
                 modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .padding(16.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    .size((160 * zoomLevel).dp)
+                    .rotate(rotation),
+            )
+
+            // Zoom controls
+            Column(
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(12.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
-                ControlButton(Icons.Filled.ZoomIn) { zoomLevel = (zoomLevel + 0.2f).coerceAtMost(3f) }
-                ControlButton(Icons.Filled.ZoomOut) { zoomLevel = (zoomLevel - 0.2f).coerceAtLeast(0.4f) }
-                ControlButton(Icons.Filled.Refresh) { zoomLevel = 1f; selectedPart = "Двигатель" }
+                ControlButton(Icons.Filled.ZoomIn) { zoomLevel = (zoomLevel + 0.15f).coerceAtMost(2.5f) }
+                ControlButton(Icons.Filled.ZoomOut) { zoomLevel = (zoomLevel - 0.15f).coerceAtLeast(0.4f) }
+                ControlButton(Icons.Filled.Refresh) { zoomLevel = 1f }
             }
         }
 
-        Text(
-            text = "Узлы автомобиля",
-            fontSize = 14.sp,
-            fontWeight = FontWeight.SemiBold,
-            color = MaterialTheme.colorScheme.onBackground,
-            modifier = Modifier.padding(start = 20.dp, top = 8.dp, bottom = 8.dp),
-        )
+        Spacer(Modifier.height(8.dp))
 
-        LazyRow(
-            contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            items(parts) { part ->
-                PartChip(
-                    text = part,
-                    selected = part == selectedPart,
-                    onClick = { selectedPart = part },
-                )
-            }
-        }
-
-        Spacer(Modifier.height(16.dp))
-
-        // Информация о выбранном узле
-        Card(
+        // Bottom info panel (scrollable)
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            shape = RoundedCornerShape(14.dp),
-            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-            border = androidx.compose.foundation.BorderStroke(
-                1.dp,
-                MaterialTheme.colorScheme.outline,
-            ),
+                .verticalScroll(rememberScrollState()),
         ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text(
-                    text = "О узле «$selectedPart»",
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
-                Spacer(Modifier.height(8.dp))
-                Text(
-                    text = when (selectedPart) {
-                        "Двигатель" -> "2.0 TFSI, 4 цилиндра, 211 л.с., непосредственный впрыск, турбонаддув. Цепь ГРМ, интеркулер."
-                        "Топливная система" -> "Электробензонасос в баке, давление 4.5 бар, инжекторы непосредственного впрыска. Бак 60 л."
-                        "Тормоза" -> "Дисковые передние/задние, ABS, ESP, диаметр переднего диска 320 мм. Суппорт однопоршневый."
-                        "Подвеска" -> "Передняя — McPherson, задняя — многорычажная. Стабилизаторы поперечной устойчивости спереди и сзади."
-                        "Электрика" -> "Аккумулятор 70 А·ч, генератор 140 А, CAN-шина. Блок предохранителей под капотом и в салоне."
-                        "Кузов" -> "Несущий кузов, оцинковка, лакокрасочное покрытие в 4 слоя. Зоны программируемой деформации."
-                        "Салон" -> "Климат-контроль, мультимедиа MMI, электрорегулировка сидений, подогрев передних сидений."
-                        else -> "Подробная информация о выбранном узле автомобиля."
-                    },
-                    fontSize = 13.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Spacer(Modifier.height(12.dp))
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(20.dp))
-                        .background(
-                            androidx.compose.ui.graphics.Color(0xFFFFA000).copy(alpha = 0.15f)
-                        )
-                        .padding(horizontal = 12.dp, vertical = 6.dp),
-                ) {
-                    Text(
-                        text = "BETA · полноценный 3D в следующей версии",
-                        fontSize = 11.sp,
-                        color = androidx.compose.ui.graphics.Color(0xFFFFA000),
-                        fontWeight = FontWeight.Medium,
+            // Part selector chips
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState())
+                    .padding(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                parts.forEachIndexed { index, part ->
+                    PartChip(
+                        text = part.name,
+                        selected = index == selectedPartIndex,
+                        onClick = { selectedPartIndex = index },
                     )
                 }
             }
+
+            Spacer(Modifier.height(12.dp))
+
+            // Part info card
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+                shape = MaterialTheme.shapes.large,
+                colors = CardDefaults.cardColors(
+                    containerColor = TechGidTheme.extendedColors.cardBackground,
+                ),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            text = selectedPart.title,
+                            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                            color = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.weight(1f),
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        DifficultyBadge(difficulty = selectedPart.difficulty)
+                    }
+
+                    Spacer(Modifier.height(6.dp))
+
+                    Text(
+                        text = selectedPart.location,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = TechGidTheme.extendedColors.textTertiary,
+                    )
+
+                    Spacer(Modifier.height(8.dp))
+
+                    Text(
+                        text = selectedPart.description,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(12.dp))
+
+            // Action buttons
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                OutlinedButton(
+                    onClick = { /* Hide seat / toggle visibility */ },
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(12.dp),
+                ) {
+                    Icon(
+                        Icons.Filled.VisibilityOff,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp),
+                    )
+                    Spacer(Modifier.width(6.dp))
+                    Text("Скрыть сиденье", style = MaterialTheme.typography.labelMedium)
+                }
+                OutlinedButton(
+                    onClick = { /* Rotate camera */ },
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(12.dp),
+                ) {
+                    Icon(
+                        Icons.Filled.Refresh,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp),
+                    )
+                    Spacer(Modifier.width(6.dp))
+                    Text("Повернуть камеру", style = MaterialTheme.typography.labelMedium)
+                }
+            }
+
+            Spacer(Modifier.height(16.dp))
         }
     }
 }
+
+private data class PartInfo(
+    val name: String,
+    val title: String,
+    val location: String,
+    val description: String,
+    val difficulty: Difficulty,
+)
 
 @Composable
 private fun ControlButton(icon: androidx.compose.ui.graphics.vector.ImageVector, onClick: () -> Unit) {
     Box(
         modifier = Modifier
-            .size(40.dp)
+            .size(36.dp)
             .clip(CircleShape)
-            .background(MaterialTheme.colorScheme.surface)
+            .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.9f))
             .clickable { onClick() },
         contentAlignment = Alignment.Center,
     ) {
@@ -260,7 +297,7 @@ private fun ControlButton(icon: androidx.compose.ui.graphics.vector.ImageVector,
             imageVector = icon,
             contentDescription = null,
             tint = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.size(20.dp),
+            modifier = Modifier.size(18.dp),
         )
     }
 }
@@ -276,7 +313,7 @@ private fun PartChip(
             .clip(RoundedCornerShape(20.dp))
             .background(
                 if (selected) MaterialTheme.colorScheme.primary
-                else MaterialTheme.colorScheme.surface
+                else TechGidTheme.extendedColors.cardBackground
             )
             .clickable { onClick() }
             .padding(horizontal = 16.dp, vertical = 10.dp),

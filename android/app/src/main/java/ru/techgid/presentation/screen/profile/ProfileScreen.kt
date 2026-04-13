@@ -22,6 +22,7 @@ import androidx.compose.material.icons.automirrored.filled.Comment
 import androidx.compose.material.icons.filled.CloudDownload
 import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Star
@@ -52,6 +53,8 @@ fun ProfileScreen(
     onLogin: () -> Unit = {},
     onSettings: () -> Unit = {},
     onServiceHistory: () -> Unit = {},
+    onFavorites: () -> Unit = {},
+    onReminders: () -> Unit = {},
 ) {
     val state by viewModel.uiState.collectAsState()
 
@@ -153,6 +156,7 @@ fun ProfileScreen(
                 icon = Icons.Filled.Star,
                 label = "Избранные инструкции",
                 trailingText = "${state.favoritesCount}",
+                onClick = onFavorites,
             )
             HorizontalDivider(color = TechGidTheme.extendedColors.divider)
             ProfileInfoRow(
@@ -182,6 +186,12 @@ fun ProfileScreen(
                 icon = Icons.Filled.DirectionsCar,
                 label = "История обслуживания",
                 onClick = onServiceHistory,
+            )
+            HorizontalDivider(color = TechGidTheme.extendedColors.divider)
+            ProfileInfoRow(
+                icon = Icons.Filled.Notifications,
+                label = "Напоминания о ТО",
+                onClick = onReminders,
             )
         }
 

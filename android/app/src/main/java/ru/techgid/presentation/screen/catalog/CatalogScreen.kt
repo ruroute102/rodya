@@ -157,6 +157,24 @@ fun CatalogScreen(
                     selectedLabelColor = MaterialTheme.colorScheme.primary,
                 ),
             )
+            FilterChip(
+                selected = false,
+                onClick = { },
+                label = { Text("Категория", style = MaterialTheme.typography.labelMedium) },
+                colors = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
+                    selectedLabelColor = MaterialTheme.colorScheme.primary,
+                ),
+            )
+            FilterChip(
+                selected = false,
+                onClick = { },
+                label = { Text("Время", style = MaterialTheme.typography.labelMedium) },
+                colors = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
+                    selectedLabelColor = MaterialTheme.colorScheme.primary,
+                ),
+            )
             Difficulty.entries.forEach { difficulty ->
                 FilterChip(
                     selected = state.selectedDifficulty == difficulty,

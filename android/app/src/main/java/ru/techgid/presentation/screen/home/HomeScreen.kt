@@ -24,8 +24,8 @@ import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Speed
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -55,6 +55,7 @@ fun HomeScreen(
     onTechSpecs: () -> Unit = {},
     onViewer3D: () -> Unit = {},
     onServiceHistory: () -> Unit = {},
+    onReminders: () -> Unit = {},
     onGuideClick: (Int) -> Unit = {},
 ) {
     val state by viewModel.uiState.collectAsState()
@@ -139,6 +140,40 @@ fun HomeScreen(
             }
         }
 
+        Spacer(Modifier.height(16.dp))
+
+        // Статус: пробег + последняя запись + ближайшее напоминание
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            StatusCard(
+                modifier = Modifier.weight(1f),
+                icon = Icons.Filled.History,
+                title = "Последнее ТО",
+                primary = state.lastRecord?.title ?: "Нет записей",
+                secondary = state.lastRecord?.let {
+                    "${formatKm(it.mileageKm)} км · ${formatDate(it.dateIso)}"
+                } ?: "Добавьте первую запись",
+                onClick = onServiceHistory,
+            )
+            StatusCard(
+                modifier = Modifier.weight(1f),
+                icon = Icons.Filled.Notifications,
+                title = "Ближайшее ТО",
+                primary = state.nextReminder?.title ?: "Нет напоминаний",
+                secondary = state.nextReminder?.let { rem ->
+                    buildString {
+                        rem.dueMileage?.let { append("${formatKm(it)} км") }
+                        if (rem.dueMileage != null && rem.dueDateIso != null) append(" · ")
+                        rem.dueDateIso?.let { append(formatDate(it)) }
+                        if (rem.dueMileage == null && rem.dueDateIso == null) append("без срока")
+                    }
+                } ?: "Создайте напоминание",
+                onClick = onReminders,
+            )
+        }
+
         Spacer(Modifier.height(24.dp))
 
         Text(
@@ -200,7 +235,7 @@ fun HomeScreen(
         ) {
             QuickActionCard(
                 modifier = Modifier.weight(1f),
-                icon = Icons.Filled.Settings,
+                icon = Icons.Filled.DirectionsCar,
                 title = "3D-модель",
                 subtitle = "Узлы авто",
                 onClick = onViewer3D,
@@ -275,7 +310,7 @@ private fun QuickActionCard(
                 modifier = Modifier
                     .size(40.dp)
                     .clip(RoundedCornerShape(10.dp))
-                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)),
+                    .background(MaterialTheme.colorScheme.primaryContainer),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
@@ -300,6 +335,90 @@ private fun QuickActionCard(
             }
         }
     }
+}
+
+@Composable
+private fun StatusCard(
+    modifier: Modifier = Modifier,
+    icon: ImageVector,
+    title: String,
+    primary: String,
+    secondary: String,
+    onClick: () -> Unit,
+) {
+    Card(
+        modifier = modifier.clickable { onClick() },
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface,
+        ),
+        shape = RoundedCornerShape(14.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        border = androidx.compose.foundation.BorderStroke(
+            1.dp,
+            TechGidTheme.extendedColors.cardBorder,
+        ),
+    ) {
+        Column(modifier = Modifier.padding(14.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier
+                        .size(32.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(18.dp),
+                    )
+                }
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    text = title,
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            Spacer(Modifier.height(8.dp))
+            Text(
+                text = primary,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+            )
+            Spacer(Modifier.height(2.dp))
+            Text(
+                text = secondary,
+                fontSize = 11.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+            )
+        }
+    }
+}
+
+private fun formatKm(value: Int): String {
+    val str = value.toString()
+    val sb = StringBuilder()
+    var count = 0
+    for (i in str.length - 1 downTo 0) {
+        sb.insert(0, str[i])
+        count++
+        if (count % 3 == 0 && i > 0) sb.insert(0, ' ')
+    }
+    return sb.toString()
+}
+
+private fun formatDate(iso: String): String {
+    return runCatching {
+        val (y, m, d) = iso.split("-")
+        "$d.$m.$y"
+    }.getOrDefault(iso)
 }
 
 @Composable

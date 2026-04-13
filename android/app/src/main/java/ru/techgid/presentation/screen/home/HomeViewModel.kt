@@ -9,8 +9,11 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import ru.techgid.data.local.entity.ReminderEntity
+import ru.techgid.data.local.entity.ServiceRecordEntity
 import ru.techgid.data.repository.AppPrefsRepository
 import ru.techgid.data.repository.FavoriteRepository
+import ru.techgid.data.repository.ReminderRepository
 import ru.techgid.data.repository.ServiceRecordRepository
 import javax.inject.Inject
 
@@ -27,6 +30,9 @@ data class HomeUiState(
     val favoritesCount: Int = 0,
     val historyCount: Int = 0,
     val totalSpentRub: Int = 0,
+    val maxMileage: Int = 0,
+    val lastRecord: ServiceRecordEntity? = null,
+    val nextReminder: ReminderEntity? = null,
     val popularGuides: List<HomePopularGuide> = DEFAULT_POPULAR,
 ) {
     companion object {
@@ -43,28 +49,56 @@ class HomeViewModel @Inject constructor(
     private val prefs: AppPrefsRepository,
     private val favorites: FavoriteRepository,
     private val history: ServiceRecordRepository,
+    private val reminders: ReminderRepository,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
     init {
+        val carInfoFlow = combine(
+            prefs.selectedCarName,
+            prefs.selectedConfigId,
+            favorites.observeCount(),
+            history.observeCount(),
+            history.observeTotalCost(),
+        ) { name, configId, favCount, histCount, total ->
+            CarInfo(name, configId, favCount, histCount, total)
+        }
+        val activityFlow = combine(
+            history.observeMaxMileage(),
+            history.observeAll(),
+            reminders.observeAll(),
+        ) { maxKm, records, reminderList ->
+            Activity(maxKm, records.firstOrNull(), reminderList.firstOrNull { !it.isDone })
+        }
         viewModelScope.launch {
-            combine(
-                prefs.selectedCarName,
-                prefs.selectedConfigId,
-                favorites.observeCount(),
-                history.observeCount(),
-                history.observeTotalCost(),
-            ) { name, configId, favCount, hist, total ->
+            combine(carInfoFlow, activityFlow) { info, activity ->
                 HomeUiState(
-                    carName = name,
-                    configId = configId,
-                    favoritesCount = favCount,
-                    historyCount = hist,
-                    totalSpentRub = total,
+                    carName = info.carName,
+                    configId = info.configId,
+                    favoritesCount = info.favoritesCount,
+                    historyCount = info.historyCount,
+                    totalSpentRub = info.totalSpentRub,
+                    maxMileage = activity.maxMileage,
+                    lastRecord = activity.lastRecord,
+                    nextReminder = activity.nextReminder,
                 )
             }.collect { state -> _uiState.update { state } }
         }
     }
+
+    private data class CarInfo(
+        val carName: String,
+        val configId: Int,
+        val favoritesCount: Int,
+        val historyCount: Int,
+        val totalSpentRub: Int,
+    )
+
+    private data class Activity(
+        val maxMileage: Int,
+        val lastRecord: ServiceRecordEntity?,
+        val nextReminder: ReminderEntity?,
+    )
 }
