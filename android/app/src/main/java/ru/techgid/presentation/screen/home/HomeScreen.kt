@@ -1,5 +1,6 @@
 package ru.techgid.presentation.screen.home
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -19,18 +20,25 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
 import androidx.compose.material.icons.automirrored.filled.MenuBook
-import androidx.compose.material.icons.filled.Build
+import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Speed
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.StarBorder
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -40,9 +48,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import ru.techgid.presentation.theme.TechGidColors
 import ru.techgid.presentation.theme.TechGidTheme
 
 @Composable
@@ -59,6 +69,7 @@ fun HomeScreen(
     onGuideClick: (Int) -> Unit = {},
 ) {
     val state by viewModel.uiState.collectAsState()
+    val isDark by viewModel.isDarkTheme.collectAsState()
 
     Column(
         modifier = Modifier
@@ -70,18 +81,46 @@ fun HomeScreen(
     ) {
         Spacer(Modifier.height(16.dp))
 
-        Text(
-            text = "ТехГид",
-            fontSize = 28.sp,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onBackground,
-        )
-        Spacer(Modifier.height(4.dp))
-        Text(
-            text = "Ремонт и обслуживание автомобиля",
-            fontSize = 14.sp,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
+        // Header с переключателем темы
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column {
+                Text(
+                    text = "ТехГид",
+                    fontSize = 28.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onBackground,
+                )
+                Text(
+                    text = "Ремонт и обслуживание автомобиля",
+                    fontSize = 14.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            // Переключатель темы
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = if (isDark) Icons.Filled.DarkMode else Icons.Filled.LightMode,
+                    contentDescription = "Тема",
+                    tint = if (isDark) TechGidColors.SecondaryAmberDark else TechGidColors.SecondaryAmber,
+                    modifier = Modifier.size(20.dp),
+                )
+                Spacer(Modifier.width(4.dp))
+                Switch(
+                    checked = isDark,
+                    onCheckedChange = { viewModel.toggleTheme(it) },
+                    colors = SwitchDefaults.colors(
+                        checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
+                        checkedTrackColor = MaterialTheme.colorScheme.primary,
+                        uncheckedThumbColor = MaterialTheme.colorScheme.primary,
+                        uncheckedTrackColor = MaterialTheme.colorScheme.primaryContainer,
+                    ),
+                )
+            }
+        }
 
         Spacer(Modifier.height(20.dp))
 
@@ -94,7 +133,7 @@ fun HomeScreen(
                 containerColor = MaterialTheme.colorScheme.primary,
             ),
             shape = RoundedCornerShape(20.dp),
-            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
         ) {
             Row(
                 modifier = Modifier
@@ -131,11 +170,11 @@ fun HomeScreen(
                         fontWeight = FontWeight.SemiBold,
                     )
                 }
-                Text(
-                    text = "Сменить",
-                    color = MaterialTheme.colorScheme.onPrimary,
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Medium,
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowForwardIos,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f),
+                    modifier = Modifier.size(16.dp),
                 )
             }
         }
@@ -176,6 +215,7 @@ fun HomeScreen(
 
         Spacer(Modifier.height(24.dp))
 
+        // Быстрые действия — 2x3 сетка
         Text(
             text = "Быстрые действия",
             fontSize = 16.sp,
@@ -184,73 +224,24 @@ fun HomeScreen(
         )
         Spacer(Modifier.height(12.dp))
 
-        // Сетка быстрых действий
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            QuickActionCard(
-                modifier = Modifier.weight(1f),
-                icon = Icons.AutoMirrored.Filled.MenuBook,
-                title = "Инструкции",
-                subtitle = "Каталог ремонтов",
-                onClick = onCatalog,
-            )
-            QuickActionCard(
-                modifier = Modifier.weight(1f),
-                icon = Icons.Filled.Info,
-                title = "Диагностика",
-                subtitle = "По симптомам",
-                onClick = onDiagnostics,
-            )
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            QuickActionCard(Modifier.weight(1f), Icons.AutoMirrored.Filled.MenuBook, "Инструкции", "Каталог ремонтов", onCatalog)
+            QuickActionCard(Modifier.weight(1f), Icons.Filled.Info, "Диагностика", "По симптомам", onDiagnostics)
         }
-
         Spacer(Modifier.height(12.dp))
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            QuickActionCard(
-                modifier = Modifier.weight(1f),
-                icon = Icons.Filled.Search,
-                title = "Поиск",
-                subtitle = "Везде",
-                onClick = onSearch,
-            )
-            QuickActionCard(
-                modifier = Modifier.weight(1f),
-                icon = Icons.Filled.Speed,
-                title = "Техданные",
-                subtitle = "Спецификации",
-                onClick = onTechSpecs,
-            )
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            QuickActionCard(Modifier.weight(1f), Icons.Filled.Search, "Поиск", "Везде", onSearch)
+            QuickActionCard(Modifier.weight(1f), Icons.Filled.Speed, "Техданные", "Спецификации", onTechSpecs)
         }
-
         Spacer(Modifier.height(12.dp))
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            QuickActionCard(
-                modifier = Modifier.weight(1f),
-                icon = Icons.Filled.DirectionsCar,
-                title = "3D-модель",
-                subtitle = "Узлы авто",
-                onClick = onViewer3D,
-            )
-            QuickActionCard(
-                modifier = Modifier.weight(1f),
-                icon = Icons.Filled.History,
-                title = "История ТО",
-                subtitle = "Журнал",
-                onClick = onServiceHistory,
-            )
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            QuickActionCard(Modifier.weight(1f), Icons.Filled.DirectionsCar, "3D-модель", "Узлы авто", onViewer3D)
+            QuickActionCard(Modifier.weight(1f), Icons.Filled.History, "История ТО", "Журнал", onServiceHistory)
         }
 
         Spacer(Modifier.height(24.dp))
 
+        // Популярные ремонты — карточки с миниатюрой, звёздами, описанием
         Text(
             text = "Популярные ремонты",
             fontSize = 16.sp,
@@ -259,24 +250,23 @@ fun HomeScreen(
         )
         Spacer(Modifier.height(12.dp))
 
-        listOf(
-            Triple("Замена топливного насоса", "6 шагов · 2 часа", "Средняя") to 1,
-            Triple("Замена масла", "3 шага · 30 минут", "Лёгкая") to 3,
-            Triple("Замена тормозных колодок", "5 шагов · 1.5 часа", "Средняя") to 4,
-        ).forEach { (triple, guideId) ->
-            val (title, meta, difficulty) = triple
+        state.popularGuides.forEach { guide ->
             PopularGuideCard(
-                title = title,
-                meta = meta,
-                difficulty = difficulty,
-                onClick = { onGuideClick(guideId) },
+                title = guide.title,
+                meta = guide.meta,
+                difficulty = guide.difficulty,
+                rating = 4,
+                ratingCount = 12,
+                onClick = { onGuideClick(guide.id) },
             )
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(10.dp))
         }
 
         Spacer(Modifier.height(24.dp))
     }
 }
+
+// ─── Карточка быстрого действия ──────────────────────────────
 
 @Composable
 private fun QuickActionCard(
@@ -288,54 +278,39 @@ private fun QuickActionCard(
 ) {
     Card(
         modifier = modifier
-            .height(120.dp)
+            .height(110.dp)
             .clickable { onClick() },
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface,
+            containerColor = TechGidTheme.extendedColors.cardBackground,
         ),
         shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        border = androidx.compose.foundation.BorderStroke(
-            1.dp,
-            TechGidTheme.extendedColors.cardBorder,
-        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        border = BorderStroke(1.dp, TechGidTheme.extendedColors.cardBorder),
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(16.dp),
+                .padding(14.dp),
             verticalArrangement = Arrangement.SpaceBetween,
         ) {
             Box(
                 modifier = Modifier
-                    .size(40.dp)
+                    .size(38.dp)
                     .clip(RoundedCornerShape(10.dp))
-                    .background(MaterialTheme.colorScheme.primaryContainer),
+                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(22.dp),
-                )
+                Icon(icon, null, Modifier.size(20.dp), tint = MaterialTheme.colorScheme.primary)
             }
             Column {
-                Text(
-                    text = title,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
-                Text(
-                    text = subtitle,
-                    fontSize = 11.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+                Text(title, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
+                Text(subtitle, fontSize = 11.sp, color = TechGidTheme.extendedColors.textTertiary)
             }
         }
     }
 }
+
+// ─── Карточка статуса ────────────────────────────────────────
 
 @Composable
 private fun StatusCard(
@@ -348,15 +323,10 @@ private fun StatusCard(
 ) {
     Card(
         modifier = modifier.clickable { onClick() },
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface,
-        ),
+        colors = CardDefaults.cardColors(containerColor = TechGidTheme.extendedColors.cardBackground),
         shape = RoundedCornerShape(14.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        border = androidx.compose.foundation.BorderStroke(
-            1.dp,
-            TechGidTheme.extendedColors.cardBorder,
-        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        border = BorderStroke(1.dp, TechGidTheme.extendedColors.cardBorder),
     ) {
         Column(modifier = Modifier.padding(14.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -367,39 +337,120 @@ private fun StatusCard(
                         .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Icon(
-                        imageVector = icon,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(18.dp),
-                    )
+                    Icon(icon, null, Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
                 }
                 Spacer(Modifier.width(8.dp))
-                Text(
-                    text = title,
-                    fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+                Text(title, fontSize = 12.sp, color = TechGidTheme.extendedColors.textTertiary)
             }
             Spacer(Modifier.height(8.dp))
-            Text(
-                text = primary,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onSurface,
-                maxLines = 1,
-                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-            )
+            Text(primary, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Spacer(Modifier.height(2.dp))
-            Text(
-                text = secondary,
-                fontSize = 11.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
-                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-            )
+            Text(secondary, fontSize = 11.sp, color = TechGidTheme.extendedColors.textTertiary, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
     }
+}
+
+// ─── Карточка популярного гайда (с миниатюрой, звёздами) ─────
+
+@Composable
+private fun PopularGuideCard(
+    title: String,
+    meta: String,
+    difficulty: String,
+    rating: Int = 4,
+    ratingCount: Int = 12,
+    onClick: () -> Unit,
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() },
+        colors = CardDefaults.cardColors(containerColor = TechGidTheme.extendedColors.cardBackground),
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        border = BorderStroke(1.dp, TechGidTheme.extendedColors.cardBorder),
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+        ) {
+            // Текст слева
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = title,
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = meta,
+                    fontSize = 12.sp,
+                    color = TechGidTheme.extendedColors.textTertiary,
+                )
+                Spacer(Modifier.height(4.dp))
+                // Сложность
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(6.dp))
+                        .background(difficultyColor(difficulty).copy(alpha = 0.15f))
+                        .padding(horizontal = 8.dp, vertical = 2.dp),
+                ) {
+                    Text(
+                        text = difficulty,
+                        fontSize = 11.sp,
+                        color = difficultyColor(difficulty),
+                        fontWeight = FontWeight.Medium,
+                    )
+                }
+                Spacer(Modifier.height(6.dp))
+                // Звёзды
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    repeat(5) { index ->
+                        Icon(
+                            imageVector = if (index < rating) Icons.Filled.Star else Icons.Filled.StarBorder,
+                            contentDescription = null,
+                            modifier = Modifier.size(14.dp),
+                            tint = if (index < rating) TechGidColors.StarFilled else TechGidColors.StarEmpty,
+                        )
+                    }
+                    Spacer(Modifier.width(4.dp))
+                    Text(
+                        text = "$ratingCount",
+                        fontSize = 11.sp,
+                        color = TechGidTheme.extendedColors.textTertiary,
+                    )
+                }
+            }
+            Spacer(Modifier.width(12.dp))
+            // Миниатюра справа
+            Box(
+                modifier = Modifier
+                    .size(80.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(MaterialTheme.colorScheme.surfaceVariant),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.DirectionsCar,
+                    contentDescription = null,
+                    modifier = Modifier.size(36.dp),
+                    tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
+                )
+            }
+        }
+    }
+}
+
+private fun difficultyColor(difficulty: String) = when (difficulty) {
+    "Лёгкая" -> TechGidColors.DifficultyEasy
+    "Средняя" -> TechGidColors.DifficultyMedium
+    "Сложная" -> TechGidColors.DifficultyHard
+    "Экспертная" -> TechGidColors.DifficultyExpert
+    else -> TechGidColors.DifficultyMedium
 }
 
 private fun formatKm(value: Int): String {
@@ -419,77 +470,4 @@ private fun formatDate(iso: String): String {
         val (y, m, d) = iso.split("-")
         "$d.$m.$y"
     }.getOrDefault(iso)
-}
-
-@Composable
-private fun PopularGuideCard(
-    title: String,
-    meta: String,
-    difficulty: String,
-    onClick: () -> Unit,
-) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onClick() },
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface,
-        ),
-        shape = RoundedCornerShape(14.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        border = androidx.compose.foundation.BorderStroke(
-            1.dp,
-            TechGidTheme.extendedColors.cardBorder,
-        ),
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(14.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(44.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.Build,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(22.dp),
-                )
-            }
-            Spacer(Modifier.width(14.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = title,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
-                Spacer(Modifier.height(2.dp))
-                Text(
-                    text = meta,
-                    fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-            Box(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f))
-                    .padding(horizontal = 10.dp, vertical = 4.dp),
-            ) {
-                Text(
-                    text = difficulty,
-                    fontSize = 11.sp,
-                    color = MaterialTheme.colorScheme.primary,
-                    fontWeight = FontWeight.Medium,
-                )
-            }
-        }
-    }
 }
