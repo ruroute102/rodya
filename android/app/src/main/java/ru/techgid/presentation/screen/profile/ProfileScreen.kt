@@ -1,7 +1,9 @@
 package ru.techgid.presentation.screen.profile
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -15,13 +17,15 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
-import androidx.compose.material.icons.automirrored.filled.Comment
+import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
 import androidx.compose.material.icons.filled.CloudDownload
 import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
@@ -41,7 +45,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import ru.techgid.presentation.theme.TechGidTheme
 
@@ -76,15 +82,22 @@ fun ProfileScreen(
         ) {
             Box(
                 modifier = Modifier
-                    .size(80.dp)
+                    .size(88.dp)
                     .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.primaryContainer),
+                    .background(
+                        brush = androidx.compose.ui.graphics.Brush.verticalGradient(
+                            listOf(
+                                MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
+                                MaterialTheme.colorScheme.primaryContainer,
+                            ),
+                        ),
+                    ),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
                     imageVector = Icons.Filled.Person,
                     contentDescription = null,
-                    modifier = Modifier.size(40.dp),
+                    modifier = Modifier.size(44.dp),
                     tint = MaterialTheme.colorScheme.primary,
                 )
             }
@@ -95,7 +108,7 @@ fun ProfileScreen(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         text = state.userName.ifBlank { "Пользователь" },
-                        style = MaterialTheme.typography.headlineSmall,
+                        style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
                         color = MaterialTheme.colorScheme.onBackground,
                     )
                     Spacer(modifier = Modifier.width(8.dp))
@@ -104,28 +117,37 @@ fun ProfileScreen(
                             imageVector = Icons.Filled.Edit,
                             contentDescription = "Редактировать",
                             modifier = Modifier.size(16.dp),
-                            tint = TechGidTheme.extendedColors.iconTint,
+                            tint = MaterialTheme.colorScheme.primary,
                         )
                     }
                 }
 
-                Text(
-                    text = state.userPhone.ifBlank { "" },
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = TechGidTheme.extendedColors.textTertiary,
-                )
+                if (state.userPhone.isNotBlank()) {
+                    Text(
+                        text = state.userPhone,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = TechGidTheme.extendedColors.textTertiary,
+                    )
+                }
 
                 Spacer(modifier = Modifier.height(4.dp))
 
-                Text(
-                    text = state.userRole.ifBlank { "Пользователь" },
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.primary,
-                )
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f))
+                        .padding(horizontal = 12.dp, vertical = 4.dp),
+                ) {
+                    Text(
+                        text = state.userRole.ifBlank { "Пользователь" },
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                }
             } else {
                 Text(
                     text = "Гость",
-                    style = MaterialTheme.typography.headlineSmall,
+                    style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
                     color = MaterialTheme.colorScheme.onBackground,
                 )
                 Spacer(modifier = Modifier.height(8.dp))
@@ -139,6 +161,33 @@ fun ProfileScreen(
 
         Spacer(modifier = Modifier.height(28.dp))
 
+        // Stats row
+        if (state.isLoggedIn) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                StatCard(
+                    modifier = Modifier.weight(1f),
+                    value = "${state.favoritesCount}",
+                    label = "Избранное",
+                )
+                StatCard(
+                    modifier = Modifier.weight(1f),
+                    value = "${state.historyCount}",
+                    label = "Записей ТО",
+                )
+                StatCard(
+                    modifier = Modifier.weight(1f),
+                    value = "${state.offlineCount}",
+                    label = "Офлайн",
+                )
+            }
+            Spacer(modifier = Modifier.height(20.dp))
+        }
+
         // My car
         ProfileSection(title = "Мой автомобиль") {
             ProfileInfoRow(
@@ -148,7 +197,7 @@ fun ProfileScreen(
             )
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(12.dp))
 
         // Activity
         ProfileSection(title = "Активность") {
@@ -158,16 +207,28 @@ fun ProfileScreen(
                 trailingText = "${state.favoritesCount}",
                 onClick = onFavorites,
             )
-            HorizontalDivider(color = TechGidTheme.extendedColors.divider)
+            HorizontalDivider(
+                color = TechGidTheme.extendedColors.divider,
+                modifier = Modifier.padding(horizontal = 16.dp),
+            )
             ProfileInfoRow(
-                icon = Icons.AutoMirrored.Filled.Comment,
-                label = "Записей в истории ТО",
+                icon = Icons.Filled.History,
+                label = "История обслуживания",
                 trailingText = "${state.historyCount}",
                 onClick = onServiceHistory,
             )
+            HorizontalDivider(
+                color = TechGidTheme.extendedColors.divider,
+                modifier = Modifier.padding(horizontal = 16.dp),
+            )
+            ProfileInfoRow(
+                icon = Icons.Filled.Notifications,
+                label = "Напоминания о ТО",
+                onClick = onReminders,
+            )
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(12.dp))
 
         // Offline data
         ProfileSection(title = "Офлайн-данные") {
@@ -178,24 +239,7 @@ fun ProfileScreen(
             )
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // History (offline available regardless of login)
-        ProfileSection(title = "Журнал") {
-            ProfileInfoRow(
-                icon = Icons.Filled.DirectionsCar,
-                label = "История обслуживания",
-                onClick = onServiceHistory,
-            )
-            HorizontalDivider(color = TechGidTheme.extendedColors.divider)
-            ProfileInfoRow(
-                icon = Icons.Filled.Notifications,
-                label = "Напоминания о ТО",
-                onClick = onReminders,
-            )
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(12.dp))
 
         // Settings
         ProfileSection(title = "Настройки") {
@@ -204,7 +248,10 @@ fun ProfileScreen(
                 label = "Настройки приложения",
                 onClick = onSettings,
             )
-            HorizontalDivider(color = TechGidTheme.extendedColors.divider)
+            HorizontalDivider(
+                color = TechGidTheme.extendedColors.divider,
+                modifier = Modifier.padding(horizontal = 16.dp),
+            )
             if (state.isLoggedIn) {
                 ProfileInfoRow(
                     icon = Icons.AutoMirrored.Filled.ExitToApp,
@@ -230,6 +277,42 @@ fun ProfileScreen(
 }
 
 @Composable
+private fun StatCard(
+    modifier: Modifier = Modifier,
+    value: String,
+    label: String,
+) {
+    Card(
+        modifier = modifier,
+        shape = RoundedCornerShape(14.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = TechGidTheme.extendedColors.cardBackground,
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        border = BorderStroke(1.dp, TechGidTheme.extendedColors.cardBorder),
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 14.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Text(
+                text = value,
+                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                color = MaterialTheme.colorScheme.primary,
+            )
+            Spacer(Modifier.height(2.dp))
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelSmall,
+                color = TechGidTheme.extendedColors.textTertiary,
+            )
+        }
+    }
+}
+
+@Composable
 private fun ProfileSection(
     title: String,
     content: @Composable () -> Unit,
@@ -243,11 +326,12 @@ private fun ProfileSection(
         )
         Card(
             modifier = Modifier.fillMaxWidth(),
-            shape = MaterialTheme.shapes.large,
+            shape = RoundedCornerShape(16.dp),
             colors = CardDefaults.cardColors(
                 containerColor = TechGidTheme.extendedColors.cardBackground,
             ),
             elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+            border = BorderStroke(1.dp, TechGidTheme.extendedColors.cardBorder),
         ) {
             content()
         }
@@ -269,22 +353,38 @@ private fun ProfileInfoRow(
             .padding(horizontal = 16.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            modifier = Modifier.size(20.dp),
-            tint = tintColor,
-        )
+        Box(
+            modifier = Modifier
+                .size(32.dp)
+                .clip(RoundedCornerShape(8.dp))
+                .background(
+                    when (tintColor) {
+                        MaterialTheme.colorScheme.error -> tintColor.copy(alpha = 0.1f)
+                        MaterialTheme.colorScheme.primary -> tintColor.copy(alpha = 0.1f)
+                        else -> MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)
+                    }
+                ),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                modifier = Modifier.size(16.dp),
+                tint = when (tintColor) {
+                    MaterialTheme.colorScheme.error -> tintColor
+                    MaterialTheme.colorScheme.primary -> tintColor
+                    else -> MaterialTheme.colorScheme.primary
+                },
+            )
+        }
         Spacer(modifier = Modifier.width(12.dp))
         Text(
             text = label,
             style = MaterialTheme.typography.bodyLarge,
-            color = if (tintColor == MaterialTheme.colorScheme.error) {
-                MaterialTheme.colorScheme.error
-            } else if (tintColor == MaterialTheme.colorScheme.primary) {
-                MaterialTheme.colorScheme.primary
-            } else {
-                MaterialTheme.colorScheme.onSurface
+            color = when (tintColor) {
+                MaterialTheme.colorScheme.error -> MaterialTheme.colorScheme.error
+                MaterialTheme.colorScheme.primary -> MaterialTheme.colorScheme.primary
+                else -> MaterialTheme.colorScheme.onSurface
             },
             modifier = Modifier.weight(1f),
         )
@@ -293,6 +393,15 @@ private fun ProfileInfoRow(
                 text = trailingText,
                 style = MaterialTheme.typography.labelMedium,
                 color = TechGidTheme.extendedColors.textTertiary,
+            )
+            Spacer(Modifier.width(4.dp))
+        }
+        if (onClick != null) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.ArrowForwardIos,
+                contentDescription = null,
+                modifier = Modifier.size(12.dp),
+                tint = TechGidTheme.extendedColors.textTertiary,
             )
         }
     }

@@ -35,6 +35,8 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -55,6 +57,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -89,13 +92,18 @@ fun GuideDetailScreen(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             IconButton(onClick = onBack) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, "Назад")
+                Icon(
+                    Icons.AutoMirrored.Filled.ArrowBack,
+                    "Назад",
+                    tint = MaterialTheme.colorScheme.onBackground,
+                )
             }
             Spacer(modifier = Modifier.weight(1f))
             if (state.totalSteps > 0) {
                 Text(
                     text = "Шаг ${state.currentStepIndex + 1}",
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.onBackground,
                 )
                 Text(
                     text = " из ${state.totalSteps}",
@@ -120,6 +128,37 @@ fun GuideDetailScreen(
                     else TechGidTheme.extendedColors.iconTint,
                 )
             }
+        }
+
+        // Step progress dots
+        if (state.totalSteps > 0) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                repeat(state.totalSteps) { index ->
+                    val isDone = state.doneStepIds.contains(
+                        state.guideDetail?.steps?.getOrNull(index)?.id ?: -1
+                    )
+                    val isCurrent = index == state.currentStepIndex
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(4.dp)
+                            .clip(RoundedCornerShape(2.dp))
+                            .background(
+                                when {
+                                    isDone -> TechGidColors.DifficultyEasy
+                                    isCurrent -> MaterialTheme.colorScheme.primary
+                                    else -> TechGidTheme.extendedColors.cardBorder
+                                }
+                            ),
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.height(8.dp))
         }
 
         if (state.isLoading) {
@@ -172,7 +211,7 @@ fun GuideDetailScreen(
                                 Icon(
                                     imageVector = if (isDone) Icons.Filled.CheckBox else Icons.Filled.CheckBoxOutlineBlank,
                                     contentDescription = if (isDone) "Шаг выполнен" else "Отметить выполненным",
-                                    tint = if (isDone) MaterialTheme.colorScheme.primary
+                                    tint = if (isDone) TechGidColors.DifficultyEasy
                                     else TechGidTheme.extendedColors.iconTint,
                                 )
                             }
@@ -186,14 +225,22 @@ fun GuideDetailScreen(
                     }
                 }
 
-                // 3D / Image placeholder
+                // Illustration area with gradient
                 item {
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(240.dp)
-                            .clip(RoundedCornerShape(16.dp))
-                            .background(MaterialTheme.colorScheme.surfaceVariant),
+                            .clip(RoundedCornerShape(20.dp))
+                            .background(
+                                brush = Brush.verticalGradient(
+                                    listOf(
+                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.06f),
+                                        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                                        MaterialTheme.colorScheme.surfaceVariant,
+                                    ),
+                                ),
+                            ),
                         contentAlignment = Alignment.Center,
                     ) {
                         if (currentStep?.imageUrl != null) {
@@ -209,7 +256,7 @@ fun GuideDetailScreen(
                                     imageVector = Icons.Filled.Build,
                                     contentDescription = null,
                                     modifier = Modifier.size(48.dp),
-                                    tint = TechGidTheme.extendedColors.textTertiary,
+                                    tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.35f),
                                 )
                                 Spacer(Modifier.height(8.dp))
                                 Text(
@@ -232,30 +279,27 @@ fun GuideDetailScreen(
                             onClick = { if (state.canGoPrev) viewModel.prevStep() },
                             modifier = Modifier.weight(1f),
                             enabled = state.canGoPrev,
-                            shape = RoundedCornerShape(12.dp),
+                            shape = RoundedCornerShape(14.dp),
                         ) {
                             Icon(
                                 Icons.AutoMirrored.Filled.ArrowBack,
                                 contentDescription = null,
                                 modifier = Modifier.size(16.dp),
                             )
-                            Spacer(Modifier.width(4.dp))
-                            Text(
-                                text = "Назад",
-                                style = MaterialTheme.typography.labelLarge,
-                            )
+                            Spacer(Modifier.width(6.dp))
+                            Text("Назад", style = MaterialTheme.typography.labelLarge)
                         }
-                        OutlinedButton(
+                        Button(
                             onClick = { if (state.canGoNext) viewModel.nextStep() },
                             modifier = Modifier.weight(1f),
                             enabled = state.canGoNext,
-                            shape = RoundedCornerShape(12.dp),
+                            shape = RoundedCornerShape(14.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.primary,
+                            ),
                         ) {
-                            Text(
-                                text = "Нест. шаг",
-                                style = MaterialTheme.typography.labelLarge,
-                            )
-                            Spacer(Modifier.width(4.dp))
+                            Text("След. шаг", style = MaterialTheme.typography.labelLarge)
+                            Spacer(Modifier.width(6.dp))
                             Icon(
                                 Icons.AutoMirrored.Filled.ArrowForward,
                                 contentDescription = null,
@@ -289,6 +333,7 @@ fun GuideDetailScreen(
                                                 if (tool.toolSpec != null) append(" (${tool.toolSpec})")
                                             },
                                             style = MaterialTheme.typography.bodyMedium,
+                                            color = MaterialTheme.colorScheme.onSurface,
                                         )
                                         if (!tool.isRequired) {
                                             Text(
@@ -318,11 +363,12 @@ fun GuideDetailScreen(
                                         Text(
                                             text = consumable.name,
                                             style = MaterialTheme.typography.bodyMedium,
+                                            color = MaterialTheme.colorScheme.onSurface,
                                         )
                                         Row {
                                             if (consumable.partNumber != null) {
                                                 Text(
-                                                    text = "Артикул: ${consumable.partNumber}",
+                                                    text = "Арт: ${consumable.partNumber}",
                                                     style = MaterialTheme.typography.labelSmall,
                                                     color = MaterialTheme.colorScheme.primary,
                                                 )
@@ -330,7 +376,7 @@ fun GuideDetailScreen(
                                             }
                                             if (consumable.quantity != null) {
                                                 Text(
-                                                    text = "× ${consumable.quantity}",
+                                                    text = "x ${consumable.quantity}",
                                                     style = MaterialTheme.typography.labelSmall,
                                                     color = TechGidTheme.extendedColors.textTertiary,
                                                 )
@@ -367,6 +413,7 @@ fun GuideDetailScreen(
                                     Text(
                                         text = check.description,
                                         style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurface,
                                     )
                                     if (check.isPostRepair) {
                                         Text(
@@ -395,13 +442,21 @@ fun GuideDetailScreen(
                         Text(
                             text = "Комментарии",
                             style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                            color = MaterialTheme.colorScheme.onBackground,
                         )
                         Spacer(Modifier.width(8.dp))
-                        Text(
-                            text = "${state.comments.size}",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = TechGidTheme.extendedColors.textTertiary,
-                        )
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(10.dp))
+                                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f))
+                                .padding(horizontal = 8.dp, vertical = 2.dp),
+                        ) {
+                            Text(
+                                text = "${state.comments.size}",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.primary,
+                            )
+                        }
                     }
                 }
 
@@ -435,7 +490,13 @@ fun GuideDetailScreen(
                     value = state.commentText,
                     onValueChange = { viewModel.updateCommentText(it) },
                     modifier = Modifier.weight(1f),
-                    placeholder = { Text("Добавить комментарий...", style = MaterialTheme.typography.bodyMedium) },
+                    placeholder = {
+                        Text(
+                            "Добавить комментарий...",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = TechGidTheme.extendedColors.textTertiary,
+                        )
+                    },
                     singleLine = true,
                     shape = RoundedCornerShape(20.dp),
                     colors = OutlinedTextFieldDefaults.colors(
@@ -446,11 +507,6 @@ fun GuideDetailScreen(
                     ),
                 )
                 Spacer(Modifier.width(4.dp))
-                Text(
-                    text = "${state.comments.size}",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = TechGidTheme.extendedColors.textTertiary,
-                )
                 IconButton(
                     onClick = { viewModel.addComment() },
                     enabled = state.commentText.isNotBlank(),
@@ -479,14 +535,27 @@ private fun ExpandableSection(
         modifier = Modifier
             .fillMaxWidth()
             .clickable { expanded = !expanded },
-        shape = MaterialTheme.shapes.medium,
+        shape = RoundedCornerShape(14.dp),
         colors = CardDefaults.cardColors(containerColor = TechGidTheme.extendedColors.cardBackground),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
     ) {
-        Column(modifier = Modifier.padding(12.dp)) {
+        Column(modifier = Modifier.padding(14.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(icon, null, Modifier.size(18.dp), tint = TechGidTheme.extendedColors.iconTint)
-                Spacer(Modifier.width(8.dp))
-                Text(title, style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold))
+                Box(
+                    modifier = Modifier
+                        .size(28.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(icon, null, Modifier.size(14.dp), tint = MaterialTheme.colorScheme.primary)
+                }
+                Spacer(Modifier.width(10.dp))
+                Text(
+                    title,
+                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
                 Spacer(Modifier.weight(1f))
                 Icon(
                     if (expanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
@@ -495,7 +564,7 @@ private fun ExpandableSection(
                 )
             }
             if (expanded) {
-                Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(10.dp))
                 content()
             }
         }
@@ -513,13 +582,13 @@ private fun CommentItem(comment: Comment) {
             modifier = Modifier
                 .size(36.dp)
                 .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.surfaceVariant),
+                .background(MaterialTheme.colorScheme.primaryContainer),
             contentAlignment = Alignment.Center,
         ) {
             Text(
                 text = comment.userName.take(1).uppercase(),
-                style = MaterialTheme.typography.titleSmall,
-                color = TechGidTheme.extendedColors.iconTint,
+                style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
+                color = MaterialTheme.colorScheme.primary,
             )
         }
         Spacer(Modifier.width(10.dp))
@@ -532,6 +601,7 @@ private fun CommentItem(comment: Comment) {
                 Text(
                     text = comment.userName,
                     style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
                 Text(
                     text = comment.createdAt,
@@ -547,7 +617,11 @@ private fun CommentItem(comment: Comment) {
                 )
             }
             Spacer(Modifier.height(2.dp))
-            Text(text = comment.text, style = MaterialTheme.typography.bodyMedium)
+            Text(
+                text = comment.text,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
             comment.replies.forEach { reply ->
                 Spacer(Modifier.height(8.dp))
                 CommentItem(comment = reply)

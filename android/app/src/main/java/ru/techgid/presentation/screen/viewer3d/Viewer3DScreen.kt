@@ -6,6 +6,7 @@ import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -28,6 +29,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.DirectionsCar
+import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.filled.ZoomIn
@@ -51,6 +53,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -76,7 +79,7 @@ fun Viewer3DScreen(
             PartInfo("Салон", "Климат-контроль", "Торпедо · центральная консоль", "Климат-контроль, мультимедиа MMI, электрорегулировка сидений, подогрев передних сидений.", Difficulty.EASY),
         )
     }
-    var selectedPartIndex by remember { mutableStateOf(1) } // Default to fuel system
+    var selectedPartIndex by remember { mutableStateOf(1) }
     val selectedPart = parts[selectedPartIndex]
 
     val infiniteTransition = rememberInfiniteTransition(label = "rotate")
@@ -111,13 +114,19 @@ fun Viewer3DScreen(
                 )
             }
             Spacer(Modifier.weight(1f))
-            Text(
-                text = carName,
-                style = MaterialTheme.typography.titleSmall,
-                color = TechGidTheme.extendedColors.textTertiary,
-            )
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(
+                    text = "3D-модель",
+                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
+                    color = MaterialTheme.colorScheme.onBackground,
+                )
+                Text(
+                    text = carName,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = TechGidTheme.extendedColors.textTertiary,
+                )
+            }
             Spacer(Modifier.weight(1f))
-            // Placeholder for right-side alignment
             Spacer(Modifier.size(48.dp))
         }
 
@@ -127,15 +136,15 @@ fun Viewer3DScreen(
                 .fillMaxWidth()
                 .weight(1f)
                 .padding(horizontal = 16.dp)
-                .clip(RoundedCornerShape(20.dp))
+                .clip(RoundedCornerShape(24.dp))
                 .background(
-                    brush = androidx.compose.ui.graphics.Brush.verticalGradient(
+                    brush = Brush.verticalGradient(
                         listOf(
                             MaterialTheme.colorScheme.primary.copy(alpha = 0.06f),
                             MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
                             MaterialTheme.colorScheme.surface,
-                        )
-                    )
+                        ),
+                    ),
                 ),
             contentAlignment = Alignment.Center,
         ) {
@@ -153,11 +162,27 @@ fun Viewer3DScreen(
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
                     .padding(12.dp),
-                verticalArrangement = Arrangement.spacedBy(4.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
                 ControlButton(Icons.Filled.ZoomIn) { zoomLevel = (zoomLevel + 0.15f).coerceAtMost(2.5f) }
                 ControlButton(Icons.Filled.ZoomOut) { zoomLevel = (zoomLevel - 0.15f).coerceAtLeast(0.4f) }
                 ControlButton(Icons.Filled.Refresh) { zoomLevel = 1f }
+            }
+
+            // Zoom level indicator
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(12.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.85f))
+                    .padding(horizontal = 8.dp, vertical = 4.dp),
+            ) {
+                Text(
+                    text = "${(zoomLevel * 100).toInt()}%",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = TechGidTheme.extendedColors.textTertiary,
+                )
             }
         }
 
@@ -193,11 +218,12 @@ fun Viewer3DScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp),
-                shape = MaterialTheme.shapes.large,
+                shape = RoundedCornerShape(20.dp),
                 colors = CardDefaults.cardColors(
                     containerColor = TechGidTheme.extendedColors.cardBackground,
                 ),
                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                border = BorderStroke(1.dp, TechGidTheme.extendedColors.cardBorder),
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Row(
@@ -217,11 +243,20 @@ fun Viewer3DScreen(
 
                     Spacer(Modifier.height(6.dp))
 
-                    Text(
-                        text = selectedPart.location,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = TechGidTheme.extendedColors.textTertiary,
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Filled.LocationOn,
+                            contentDescription = null,
+                            modifier = Modifier.size(14.dp),
+                            tint = TechGidTheme.extendedColors.textTertiary,
+                        )
+                        Spacer(Modifier.width(4.dp))
+                        Text(
+                            text = selectedPart.location,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = TechGidTheme.extendedColors.textTertiary,
+                        )
+                    }
 
                     Spacer(Modifier.height(8.dp))
 
@@ -229,6 +264,7 @@ fun Viewer3DScreen(
                         text = selectedPart.description,
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        lineHeight = 18.sp,
                     )
                 }
             }
@@ -243,9 +279,9 @@ fun Viewer3DScreen(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 OutlinedButton(
-                    onClick = { /* Hide seat / toggle visibility */ },
+                    onClick = { },
                     modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(12.dp),
+                    shape = RoundedCornerShape(14.dp),
                 ) {
                     Icon(
                         Icons.Filled.VisibilityOff,
@@ -253,12 +289,12 @@ fun Viewer3DScreen(
                         modifier = Modifier.size(16.dp),
                     )
                     Spacer(Modifier.width(6.dp))
-                    Text("Скрыть сиденье", style = MaterialTheme.typography.labelMedium)
+                    Text("Скрыть слой", style = MaterialTheme.typography.labelMedium)
                 }
                 OutlinedButton(
-                    onClick = { /* Rotate camera */ },
+                    onClick = { },
                     modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(12.dp),
+                    shape = RoundedCornerShape(14.dp),
                 ) {
                     Icon(
                         Icons.Filled.Refresh,
@@ -266,7 +302,7 @@ fun Viewer3DScreen(
                         modifier = Modifier.size(16.dp),
                     )
                     Spacer(Modifier.width(6.dp))
-                    Text("Повернуть камеру", style = MaterialTheme.typography.labelMedium)
+                    Text("Сброс камеры", style = MaterialTheme.typography.labelMedium)
                 }
             }
 
@@ -287,9 +323,9 @@ private data class PartInfo(
 private fun ControlButton(icon: androidx.compose.ui.graphics.vector.ImageVector, onClick: () -> Unit) {
     Box(
         modifier = Modifier
-            .size(36.dp)
+            .size(40.dp)
             .clip(CircleShape)
-            .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.9f))
+            .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.92f))
             .clickable { onClick() },
         contentAlignment = Alignment.Center,
     ) {
@@ -297,7 +333,7 @@ private fun ControlButton(icon: androidx.compose.ui.graphics.vector.ImageVector,
             imageVector = icon,
             contentDescription = null,
             tint = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.size(18.dp),
+            modifier = Modifier.size(20.dp),
         )
     }
 }
@@ -313,7 +349,7 @@ private fun PartChip(
             .clip(RoundedCornerShape(20.dp))
             .background(
                 if (selected) MaterialTheme.colorScheme.primary
-                else TechGidTheme.extendedColors.cardBackground
+                else TechGidTheme.extendedColors.cardBackground,
             )
             .clickable { onClick() }
             .padding(horizontal = 16.dp, vertical = 10.dp),

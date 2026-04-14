@@ -1,5 +1,6 @@
 package ru.techgid.presentation.screen.search
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -24,16 +25,14 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.StarBorder
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -58,6 +57,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import ru.techgid.domain.model.GuideListItem
+import ru.techgid.presentation.components.DifficultyBadge
 import ru.techgid.presentation.theme.TechGidColors
 import ru.techgid.presentation.theme.TechGidTheme
 
@@ -80,7 +80,7 @@ fun SearchScreen(
     ) {
         Spacer(Modifier.height(12.dp))
 
-        // Search bar + saved icon
+        // Search bar
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -93,8 +93,9 @@ fun SearchScreen(
                 modifier = Modifier.weight(1f),
                 placeholder = {
                     Text(
-                        "Поиск...",
+                        "Поиск инструкций...",
                         style = MaterialTheme.typography.bodyLarge,
+                        color = TechGidTheme.extendedColors.textTertiary,
                     )
                 },
                 leadingIcon = {
@@ -117,7 +118,7 @@ fun SearchScreen(
                     }
                 },
                 singleLine = true,
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(16.dp),
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
                 keyboardActions = KeyboardActions(onSearch = { }),
                 colors = OutlinedTextFieldDefaults.colors(
@@ -127,19 +128,11 @@ fun SearchScreen(
                     unfocusedBorderColor = TechGidTheme.extendedColors.cardBorder,
                 ),
             )
-            Spacer(Modifier.width(8.dp))
-            IconButton(onClick = { /* Saved guides */ }) {
-                Icon(
-                    imageVector = Icons.Filled.Lock,
-                    contentDescription = "Сохранённые",
-                    tint = TechGidTheme.extendedColors.iconTint,
-                )
-            }
         }
 
         Spacer(Modifier.height(12.dp))
 
-        // Filter chips
+        // Filter chips — custom styled pills
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -148,19 +141,10 @@ fun SearchScreen(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             filters.forEach { filter ->
-                FilterChip(
+                FilterPill(
+                    text = filter,
                     selected = selectedFilter == filter,
                     onClick = { selectedFilter = filter },
-                    label = {
-                        Text(
-                            text = filter,
-                            style = MaterialTheme.typography.labelMedium,
-                        )
-                    },
-                    colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
-                        selectedLabelColor = MaterialTheme.colorScheme.primary,
-                    ),
                 )
             }
         }
@@ -168,30 +152,37 @@ fun SearchScreen(
         Spacer(Modifier.height(12.dp))
 
         if (state.query.isBlank()) {
-            // Recent queries
+            // Recent queries section
             Column(modifier = Modifier.padding(horizontal = 16.dp)) {
                 Text(
-                    text = "Поиск...",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onBackground,
+                    text = "Недавние запросы",
+                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
+                    color = TechGidTheme.extendedColors.textTertiary,
+                    modifier = Modifier.padding(bottom = 8.dp),
                 )
-                Spacer(Modifier.height(12.dp))
                 state.recentQueries.forEach { item ->
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clip(RoundedCornerShape(8.dp))
+                            .clip(RoundedCornerShape(12.dp))
                             .clickable { viewModel.selectRecent(item) }
                             .padding(vertical = 12.dp, horizontal = 4.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Icon(
-                            imageVector = Icons.Filled.History,
-                            contentDescription = null,
-                            tint = TechGidTheme.extendedColors.iconTint,
-                            modifier = Modifier.size(20.dp),
-                        )
+                        Box(
+                            modifier = Modifier
+                                .size(32.dp)
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(MaterialTheme.colorScheme.surfaceVariant),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.History,
+                                contentDescription = null,
+                                tint = TechGidTheme.extendedColors.iconTint,
+                                modifier = Modifier.size(16.dp),
+                            )
+                        }
                         Spacer(Modifier.width(12.dp))
                         Text(
                             text = item,
@@ -214,10 +205,17 @@ fun SearchScreen(
                 contentAlignment = Alignment.Center,
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Icon(
+                        imageVector = Icons.Filled.Search,
+                        contentDescription = null,
+                        modifier = Modifier.size(48.dp),
+                        tint = TechGidTheme.extendedColors.textTertiary.copy(alpha = 0.5f),
+                    )
+                    Spacer(Modifier.height(12.dp))
                     Text(
                         text = "Ничего не найдено",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = TechGidTheme.extendedColors.textTertiary,
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     Spacer(Modifier.height(4.dp))
                     Text(
@@ -228,6 +226,14 @@ fun SearchScreen(
                 }
             }
         } else {
+            // Results count
+            Text(
+                text = "Найдено: ${state.results.size}",
+                style = MaterialTheme.typography.labelMedium,
+                color = TechGidTheme.extendedColors.textTertiary,
+                modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp),
+            )
+
             LazyColumn(
                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -245,6 +251,32 @@ fun SearchScreen(
 }
 
 @Composable
+private fun FilterPill(
+    text: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+) {
+    Box(
+        modifier = Modifier
+            .clip(RoundedCornerShape(20.dp))
+            .background(
+                if (selected) MaterialTheme.colorScheme.primary
+                else TechGidTheme.extendedColors.cardBackground,
+            )
+            .clickable { onClick() }
+            .padding(horizontal = 16.dp, vertical = 10.dp),
+    ) {
+        Text(
+            text = text,
+            fontSize = 13.sp,
+            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
+            color = if (selected) MaterialTheme.colorScheme.onPrimary
+            else MaterialTheme.colorScheme.onSurface,
+        )
+    }
+}
+
+@Composable
 private fun SearchGuideCard(guide: GuideListItem, onClick: () -> Unit) {
     Card(
         modifier = Modifier
@@ -253,12 +285,9 @@ private fun SearchGuideCard(guide: GuideListItem, onClick: () -> Unit) {
         colors = CardDefaults.cardColors(
             containerColor = TechGidTheme.extendedColors.cardBackground,
         ),
-        shape = MaterialTheme.shapes.large,
+        shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        border = androidx.compose.foundation.BorderStroke(
-            1.dp,
-            TechGidTheme.extendedColors.cardBorder,
-        ),
+        border = BorderStroke(1.dp, TechGidTheme.extendedColors.cardBorder),
     ) {
         Row(
             modifier = Modifier
@@ -271,8 +300,7 @@ private fun SearchGuideCard(guide: GuideListItem, onClick: () -> Unit) {
             ) {
                 Text(
                     text = guide.title,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold,
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
                     color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
@@ -281,14 +309,15 @@ private fun SearchGuideCard(guide: GuideListItem, onClick: () -> Unit) {
                 Spacer(Modifier.height(4.dp))
 
                 Text(
-                    text = buildString {
-                        append(guide.componentName)
-                        append(" · ")
-                        append(guide.difficulty.label)
-                    },
+                    text = guide.componentName,
                     style = MaterialTheme.typography.bodySmall,
                     color = TechGidTheme.extendedColors.textTertiary,
                 )
+
+                Spacer(Modifier.height(6.dp))
+
+                // Difficulty badge
+                DifficultyBadge(difficulty = guide.difficulty)
 
                 Spacer(Modifier.height(6.dp))
 
@@ -336,7 +365,7 @@ private fun SearchGuideCard(guide: GuideListItem, onClick: () -> Unit) {
             Box(
                 modifier = Modifier
                     .size(80.dp)
-                    .clip(MaterialTheme.shapes.medium)
+                    .clip(RoundedCornerShape(12.dp))
                     .background(MaterialTheme.colorScheme.surfaceVariant),
                 contentAlignment = Alignment.Center,
             ) {
@@ -348,10 +377,11 @@ private fun SearchGuideCard(guide: GuideListItem, onClick: () -> Unit) {
                         contentScale = ContentScale.Crop,
                     )
                 } else {
-                    Text(
-                        text = guide.componentName.take(2).uppercase(),
-                        style = MaterialTheme.typography.titleLarge,
-                        color = TechGidTheme.extendedColors.textTertiary,
+                    Icon(
+                        imageVector = Icons.Filled.DirectionsCar,
+                        contentDescription = null,
+                        modifier = Modifier.size(32.dp),
+                        tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
                     )
                 }
             }

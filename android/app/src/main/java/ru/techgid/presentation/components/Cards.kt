@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
+import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.StarBorder
 import androidx.compose.material.icons.filled.Verified
@@ -28,7 +29,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
@@ -39,7 +42,6 @@ import ru.techgid.presentation.theme.TechGidTheme
 
 /**
  * Селектор параметра автомобиля (марка, модель, год...).
- * Чистый, минималистичный, как в референсе.
  */
 @Composable
 fun CarSelectorItem(
@@ -52,7 +54,7 @@ fun CarSelectorItem(
         modifier = modifier
             .fillMaxWidth()
             .clickable(onClick = onClick),
-        shape = MaterialTheme.shapes.medium,
+        shape = RoundedCornerShape(14.dp),
         colors = CardDefaults.cardColors(
             containerColor = TechGidTheme.extendedColors.cardBackground,
         ),
@@ -66,20 +68,32 @@ fun CarSelectorItem(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(
-                text = value ?: label,
-                style = MaterialTheme.typography.titleMedium,
-                color = if (value != null) {
-                    MaterialTheme.colorScheme.onSurface
-                } else {
-                    TechGidTheme.extendedColors.textTertiary
-                },
-            )
+            Column {
+                if (value != null) {
+                    Text(
+                        text = label,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = TechGidTheme.extendedColors.textTertiary,
+                    )
+                    Spacer(Modifier.height(2.dp))
+                }
+                Text(
+                    text = value ?: label,
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontWeight = if (value != null) FontWeight.SemiBold else FontWeight.Normal,
+                    ),
+                    color = if (value != null) {
+                        MaterialTheme.colorScheme.onSurface
+                    } else {
+                        TechGidTheme.extendedColors.textTertiary
+                    },
+                )
+            }
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.ArrowForwardIos,
                 contentDescription = null,
-                modifier = Modifier.size(16.dp),
-                tint = TechGidTheme.extendedColors.iconTint,
+                modifier = Modifier.size(14.dp),
+                tint = TechGidTheme.extendedColors.textTertiary,
             )
         }
     }
@@ -87,7 +101,6 @@ fun CarSelectorItem(
 
 /**
  * Карточка инструкции в каталоге.
- * Содержательная: изображение, название, рейтинг, сложность, метки.
  */
 @Composable
 fun GuideCard(
@@ -99,7 +112,7 @@ fun GuideCard(
         modifier = modifier
             .fillMaxWidth()
             .clickable(onClick = onClick),
-        shape = MaterialTheme.shapes.large,
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
             containerColor = TechGidTheme.extendedColors.cardBackground,
         ),
@@ -111,40 +124,13 @@ fun GuideCard(
                 .fillMaxWidth()
                 .padding(12.dp),
         ) {
-            // Миниатюра
-            Box(
-                modifier = Modifier
-                    .size(80.dp)
-                    .clip(MaterialTheme.shapes.medium)
-                    .background(MaterialTheme.colorScheme.surfaceVariant),
-                contentAlignment = Alignment.Center,
-            ) {
-                if (guide.thumbnailUrl != null) {
-                    AsyncImage(
-                        model = guide.thumbnailUrl,
-                        contentDescription = guide.title,
-                        modifier = Modifier.size(80.dp),
-                        contentScale = ContentScale.Crop,
-                    )
-                } else {
-                    Text(
-                        text = guide.componentName.take(2).uppercase(),
-                        style = MaterialTheme.typography.titleLarge,
-                        color = TechGidTheme.extendedColors.textTertiary,
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.width(12.dp))
-
             // Текст и метки
             Column(
                 modifier = Modifier.weight(1f),
             ) {
-                // Название
                 Text(
                     text = guide.title,
-                    style = MaterialTheme.typography.titleMedium,
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
                     color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
@@ -152,20 +138,18 @@ fun GuideCard(
 
                 Spacer(modifier = Modifier.height(4.dp))
 
-                // Узел + Сложность
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    if (guide.componentName.isNotEmpty()) {
-                        Text(
-                            text = guide.componentName,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = TechGidTheme.extendedColors.textTertiary,
-                        )
-                    }
-                    DifficultyBadge(difficulty = guide.difficulty)
+                // Узел
+                if (guide.componentName.isNotEmpty()) {
+                    Text(
+                        text = guide.componentName,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = TechGidTheme.extendedColors.textTertiary,
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
                 }
+
+                // Сложность
+                DifficultyBadge(difficulty = guide.difficulty)
 
                 Spacer(modifier = Modifier.height(6.dp))
 
@@ -197,7 +181,6 @@ fun GuideCard(
                         color = TechGidTheme.extendedColors.textTertiary,
                     )
 
-                    // Верифицирована
                     if (guide.isVerified) {
                         Spacer(modifier = Modifier.width(8.dp))
                         Icon(
@@ -207,6 +190,40 @@ fun GuideCard(
                             tint = MaterialTheme.colorScheme.primary,
                         )
                     }
+                }
+            }
+
+            Spacer(modifier = Modifier.width(12.dp))
+
+            // Миниатюра справа с градиентом
+            Box(
+                modifier = Modifier
+                    .size(80.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(
+                        brush = Brush.verticalGradient(
+                            listOf(
+                                MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
+                                MaterialTheme.colorScheme.surfaceVariant,
+                            ),
+                        ),
+                    ),
+                contentAlignment = Alignment.Center,
+            ) {
+                if (guide.thumbnailUrl != null) {
+                    AsyncImage(
+                        model = guide.thumbnailUrl,
+                        contentDescription = guide.title,
+                        modifier = Modifier.size(80.dp),
+                        contentScale = ContentScale.Crop,
+                    )
+                } else {
+                    Icon(
+                        imageVector = Icons.Filled.DirectionsCar,
+                        contentDescription = null,
+                        modifier = Modifier.size(32.dp),
+                        tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.35f),
+                    )
                 }
             }
         }
@@ -236,6 +253,7 @@ fun DifficultyBadge(difficulty: Difficulty, modifier: Modifier = Modifier) {
             text = text,
             style = MaterialTheme.typography.labelSmall,
             color = color,
+            fontWeight = FontWeight.Medium,
         )
     }
 }

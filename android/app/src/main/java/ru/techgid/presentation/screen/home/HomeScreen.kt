@@ -35,7 +35,6 @@ import androidx.compose.material.icons.filled.StarBorder
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
@@ -46,6 +45,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -90,13 +90,12 @@ fun HomeScreen(
             Column {
                 Text(
                     text = "ТехГид",
-                    fontSize = 28.sp,
-                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.Bold),
                     color = MaterialTheme.colorScheme.onBackground,
                 )
                 Text(
                     text = "Ремонт и обслуживание автомобиля",
-                    fontSize = 14.sp,
+                    style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
@@ -160,14 +159,13 @@ fun HomeScreen(
                     Text(
                         text = "Мой автомобиль",
                         color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f),
-                        fontSize = 13.sp,
+                        style = MaterialTheme.typography.labelMedium,
                     )
                     Spacer(Modifier.height(2.dp))
                     Text(
                         text = state.carName,
                         color = MaterialTheme.colorScheme.onPrimary,
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.SemiBold,
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
                     )
                 }
                 Icon(
@@ -181,7 +179,7 @@ fun HomeScreen(
 
         Spacer(Modifier.height(16.dp))
 
-        // Статус: пробег + последняя запись + ближайшее напоминание
+        // Статус: последняя запись + ближайшее напоминание
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -218,8 +216,7 @@ fun HomeScreen(
         // Быстрые действия — 2x3 сетка
         Text(
             text = "Быстрые действия",
-            fontSize = 16.sp,
-            fontWeight = FontWeight.SemiBold,
+            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
             color = MaterialTheme.colorScheme.onBackground,
         )
         Spacer(Modifier.height(12.dp))
@@ -244,8 +241,7 @@ fun HomeScreen(
         // Популярные ремонты — карточки с миниатюрой, звёздами, описанием
         Text(
             text = "Популярные ремонты",
-            fontSize = 16.sp,
-            fontWeight = FontWeight.SemiBold,
+            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
             color = MaterialTheme.colorScheme.onBackground,
         )
         Spacer(Modifier.height(12.dp))
@@ -303,8 +299,16 @@ private fun QuickActionCard(
                 Icon(icon, null, Modifier.size(20.dp), tint = MaterialTheme.colorScheme.primary)
             }
             Column {
-                Text(title, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
-                Text(subtitle, fontSize = 11.sp, color = TechGidTheme.extendedColors.textTertiary)
+                Text(
+                    title,
+                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                Text(
+                    subtitle,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = TechGidTheme.extendedColors.textTertiary,
+                )
             }
         }
     }
@@ -340,12 +344,28 @@ private fun StatusCard(
                     Icon(icon, null, Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
                 }
                 Spacer(Modifier.width(8.dp))
-                Text(title, fontSize = 12.sp, color = TechGidTheme.extendedColors.textTertiary)
+                Text(
+                    title,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = TechGidTheme.extendedColors.textTertiary,
+                )
             }
             Spacer(Modifier.height(8.dp))
-            Text(primary, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(
+                primary,
+                style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
             Spacer(Modifier.height(2.dp))
-            Text(secondary, fontSize = 11.sp, color = TechGidTheme.extendedColors.textTertiary, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(
+                secondary,
+                style = MaterialTheme.typography.labelSmall,
+                color = TechGidTheme.extendedColors.textTertiary,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
         }
     }
 }
@@ -379,8 +399,7 @@ private fun PopularGuideCard(
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = title,
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.SemiBold,
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
                     color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
@@ -388,7 +407,7 @@ private fun PopularGuideCard(
                 Spacer(Modifier.height(4.dp))
                 Text(
                     text = meta,
-                    fontSize = 12.sp,
+                    style = MaterialTheme.typography.bodySmall,
                     color = TechGidTheme.extendedColors.textTertiary,
                 )
                 Spacer(Modifier.height(4.dp))
@@ -401,7 +420,7 @@ private fun PopularGuideCard(
                 ) {
                     Text(
                         text = difficulty,
-                        fontSize = 11.sp,
+                        style = MaterialTheme.typography.labelSmall,
                         color = difficultyColor(difficulty),
                         fontWeight = FontWeight.Medium,
                     )
@@ -420,18 +439,25 @@ private fun PopularGuideCard(
                     Spacer(Modifier.width(4.dp))
                     Text(
                         text = "$ratingCount",
-                        fontSize = 11.sp,
+                        style = MaterialTheme.typography.labelSmall,
                         color = TechGidTheme.extendedColors.textTertiary,
                     )
                 }
             }
             Spacer(Modifier.width(12.dp))
-            // Миниатюра справа
+            // Миниатюра справа с градиентом
             Box(
                 modifier = Modifier
                     .size(80.dp)
                     .clip(RoundedCornerShape(12.dp))
-                    .background(MaterialTheme.colorScheme.surfaceVariant),
+                    .background(
+                        brush = Brush.verticalGradient(
+                            listOf(
+                                MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
+                                MaterialTheme.colorScheme.surfaceVariant,
+                            ),
+                        ),
+                    ),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
