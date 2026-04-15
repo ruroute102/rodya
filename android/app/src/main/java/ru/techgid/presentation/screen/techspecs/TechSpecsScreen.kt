@@ -1,10 +1,12 @@
 package ru.techgid.presentation.screen.techspecs
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -19,6 +21,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
 import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Settings
@@ -43,7 +46,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import ru.techgid.presentation.theme.TechGidTheme
 
 private data class TechSpecCategory(
     val icon: ImageVector,
@@ -153,21 +156,20 @@ fun TechSpecsScreen(
             Column(modifier = Modifier.padding(start = 4.dp)) {
                 Text(
                     text = selectedCategory?.name ?: "Технические данные",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.SemiBold,
+                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.SemiBold),
                     color = MaterialTheme.colorScheme.onBackground,
                 )
                 Text(
                     text = carName,
-                    fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = TechGidTheme.extendedColors.textTertiary,
                 )
             }
         }
 
         if (selectedCategory == null) {
             LazyColumn(
-                contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
+                contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 items(categories) { category ->
@@ -179,7 +181,7 @@ fun TechSpecsScreen(
             }
         } else {
             LazyColumn(
-                contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
+                contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 items(selectedCategory!!.specs) { spec ->
@@ -196,13 +198,12 @@ private fun CategoryCard(category: TechSpecCategory, onClick: () -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onClick() },
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        shape = RoundedCornerShape(14.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        border = androidx.compose.foundation.BorderStroke(
-            1.dp,
-            MaterialTheme.colorScheme.outline,
+        colors = CardDefaults.cardColors(
+            containerColor = TechGidTheme.extendedColors.cardBackground,
         ),
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        border = BorderStroke(1.dp, TechGidTheme.extendedColors.cardBorder),
     ) {
         Row(
             modifier = Modifier
@@ -228,16 +229,22 @@ private fun CategoryCard(category: TechSpecCategory, onClick: () -> Unit) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = category.name,
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.SemiBold,
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
                     color = MaterialTheme.colorScheme.onSurface,
                 )
+                Spacer(Modifier.height(2.dp))
                 Text(
                     text = "${category.count} параметров",
-                    fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = TechGidTheme.extendedColors.textTertiary,
                 )
             }
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.ArrowForwardIos,
+                contentDescription = null,
+                tint = TechGidTheme.extendedColors.textTertiary,
+                modifier = Modifier.size(12.dp),
+            )
         }
     }
 }
@@ -246,13 +253,12 @@ private fun CategoryCard(category: TechSpecCategory, onClick: () -> Unit) {
 private fun SpecRow(spec: TechSpec) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        shape = RoundedCornerShape(12.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        border = androidx.compose.foundation.BorderStroke(
-            1.dp,
-            MaterialTheme.colorScheme.outline,
+        colors = CardDefaults.cardColors(
+            containerColor = TechGidTheme.extendedColors.cardBackground,
         ),
+        shape = RoundedCornerShape(14.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        border = BorderStroke(1.dp, TechGidTheme.extendedColors.cardBorder),
     ) {
         Column(modifier = Modifier.padding(14.dp)) {
             Row(
@@ -262,7 +268,7 @@ private fun SpecRow(spec: TechSpec) {
             ) {
                 Text(
                     text = spec.key,
-                    fontSize = 14.sp,
+                    style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.weight(1f),
                 )
@@ -274,8 +280,7 @@ private fun SpecRow(spec: TechSpec) {
                 ) {
                     Text(
                         text = "${spec.value} ${spec.unit}",
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.SemiBold,
+                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
                         color = MaterialTheme.colorScheme.primary,
                     )
                 }
@@ -284,16 +289,16 @@ private fun SpecRow(spec: TechSpec) {
                 Spacer(Modifier.height(4.dp))
                 Text(
                     text = it,
-                    fontSize = 11.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = TechGidTheme.extendedColors.textTertiary,
                 )
             }
             spec.range?.let {
                 Spacer(Modifier.height(2.dp))
                 Text(
                     text = "Норма: $it",
-                    fontSize = 11.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = TechGidTheme.extendedColors.textTertiary,
                 )
             }
         }

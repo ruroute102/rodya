@@ -36,11 +36,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import ru.techgid.presentation.theme.TechGidTheme
 
 @Composable
 fun EditProfileScreen(
@@ -82,8 +83,7 @@ fun EditProfileScreen(
                 }
                 Text(
                     text = "Редактировать профиль",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.SemiBold,
+                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.SemiBold),
                     color = MaterialTheme.colorScheme.onBackground,
                     modifier = Modifier.padding(start = 4.dp),
                 )
@@ -101,7 +101,14 @@ fun EditProfileScreen(
                     modifier = Modifier
                         .size(96.dp)
                         .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)),
+                        .background(
+                            brush = Brush.verticalGradient(
+                                listOf(
+                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
+                                    MaterialTheme.colorScheme.primaryContainer,
+                                ),
+                            ),
+                        ),
                     contentAlignment = Alignment.Center,
                 ) {
                     Icon(
@@ -125,10 +132,10 @@ fun EditProfileScreen(
                     label = { Text("Имя") },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
-                    shape = RoundedCornerShape(12.dp),
+                    shape = RoundedCornerShape(14.dp),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = MaterialTheme.colorScheme.primary,
-                        unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                        unfocusedBorderColor = TechGidTheme.extendedColors.cardBorder,
                     ),
                 )
                 OutlinedTextField(
@@ -138,10 +145,10 @@ fun EditProfileScreen(
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-                    shape = RoundedCornerShape(12.dp),
+                    shape = RoundedCornerShape(14.dp),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = MaterialTheme.colorScheme.primary,
-                        unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                        unfocusedBorderColor = TechGidTheme.extendedColors.cardBorder,
                     ),
                 )
 
@@ -149,8 +156,8 @@ fun EditProfileScreen(
 
                 Text(
                     text = "Данные хранятся только на устройстве. Никуда не отправляются.",
-                    fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = TechGidTheme.extendedColors.textTertiary,
                 )
 
                 Spacer(Modifier.height(8.dp))
@@ -163,7 +170,10 @@ fun EditProfileScreen(
                     enabled = state.isLoaded,
                     shape = RoundedCornerShape(14.dp),
                 ) {
-                    Text("Сохранить", fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+                    Text(
+                        "Сохранить",
+                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
+                    )
                 }
             }
         }

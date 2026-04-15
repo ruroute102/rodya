@@ -1,5 +1,6 @@
 package ru.techgid.presentation.screen.reminders
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -30,6 +31,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -53,9 +55,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import ru.techgid.data.local.entity.ReminderEntity
+import ru.techgid.presentation.theme.TechGidTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -102,14 +104,13 @@ fun RemindersScreen(
                 Column(modifier = Modifier.padding(start = 4.dp)) {
                     Text(
                         text = "Напоминания о ТО",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.SemiBold,
+                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.SemiBold),
                         color = MaterialTheme.colorScheme.onBackground,
                     )
                     Text(
                         text = "${state.items.count { !it.isDone }} активных",
-                        fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = TechGidTheme.extendedColors.textTertiary,
                     )
                 }
             }
@@ -123,24 +124,31 @@ fun RemindersScreen(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         modifier = Modifier.padding(32.dp),
                     ) {
-                        Icon(
-                            imageVector = Icons.Filled.Notifications,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(56.dp),
-                        )
-                        Spacer(Modifier.height(12.dp))
+                        Box(
+                            modifier = Modifier
+                                .size(72.dp)
+                                .clip(RoundedCornerShape(20.dp))
+                                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.Notifications,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
+                                modifier = Modifier.size(40.dp),
+                            )
+                        }
+                        Spacer(Modifier.height(16.dp))
                         Text(
                             text = "Пока нет напоминаний",
-                            fontSize = 15.sp,
-                            fontWeight = FontWeight.SemiBold,
+                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
                             color = MaterialTheme.colorScheme.onBackground,
                         )
-                        Spacer(Modifier.height(4.dp))
+                        Spacer(Modifier.height(6.dp))
                         Text(
                             text = "Нажмите +, чтобы добавить напоминание о замене масла, фильтра или сезонных шин",
-                            fontSize = 13.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = TechGidTheme.extendedColors.textTertiary,
                         )
                     }
                 }
@@ -165,6 +173,7 @@ fun RemindersScreen(
         ModalBottomSheet(
             onDismissRequest = { showAddSheet = false },
             sheetState = sheetState,
+            containerColor = TechGidTheme.extendedColors.cardBackground,
         ) {
             AddReminderForm(
                 onAdd = { title, mileage, date ->
@@ -185,32 +194,36 @@ private fun ReminderCard(
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        shape = RoundedCornerShape(14.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        border = androidx.compose.foundation.BorderStroke(
-            1.dp,
-            MaterialTheme.colorScheme.outline,
+        colors = CardDefaults.cardColors(
+            containerColor = TechGidTheme.extendedColors.cardBackground,
         ),
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        border = BorderStroke(1.dp, TechGidTheme.extendedColors.cardBorder),
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 8.dp, vertical = 6.dp),
+                .padding(horizontal = 10.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Checkbox(
                 checked = reminder.isDone,
                 onCheckedChange = { onToggle() },
+                colors = CheckboxDefaults.colors(
+                    checkedColor = MaterialTheme.colorScheme.primary,
+                    uncheckedColor = TechGidTheme.extendedColors.textTertiary,
+                ),
             )
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = reminder.title,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurface,
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                    color = if (reminder.isDone) TechGidTheme.extendedColors.textTertiary
+                    else MaterialTheme.colorScheme.onSurface,
                     textDecoration = if (reminder.isDone) TextDecoration.LineThrough else TextDecoration.None,
                 )
+                Spacer(Modifier.height(2.dp))
                 val subtitle = buildString {
                     reminder.dueMileage?.let { append("по пробегу: ${formatKm(it)} км") }
                     if (reminder.dueMileage != null && reminder.dueDateIso != null) append(" · ")
@@ -219,8 +232,8 @@ private fun ReminderCard(
                 }
                 Text(
                     text = subtitle,
-                    fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = TechGidTheme.extendedColors.textTertiary,
                 )
             }
             IconButton(onClick = onDelete, modifier = Modifier.size(36.dp)) {
@@ -256,8 +269,7 @@ private fun AddReminderForm(
         ) {
             Text(
                 text = "Новое напоминание",
-                fontSize = 18.sp,
-                fontWeight = FontWeight.SemiBold,
+                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.SemiBold),
                 color = MaterialTheme.colorScheme.onSurface,
             )
             IconButton(onClick = onCancel) {
@@ -273,6 +285,7 @@ private fun AddReminderForm(
             label = { Text("Что напомнить") },
             placeholder = { Text("Замена масла") },
             modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(12.dp),
             singleLine = true,
         )
         Spacer(Modifier.height(8.dp))
@@ -281,6 +294,7 @@ private fun AddReminderForm(
             onValueChange = { mileage = it.filter(Char::isDigit) },
             label = { Text("По пробегу, км (необязательно)") },
             modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(12.dp),
             singleLine = true,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
         )
@@ -291,6 +305,7 @@ private fun AddReminderForm(
             label = { Text("Дата, ГГГГ-ММ-ДД (необязательно)") },
             placeholder = { Text("2026-10-01") },
             modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(12.dp),
             singleLine = true,
         )
 
@@ -305,12 +320,18 @@ private fun AddReminderForm(
                 )
             },
             enabled = title.isNotBlank(),
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(52.dp),
+            shape = RoundedCornerShape(14.dp),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Filled.Check, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(8.dp))
-                Text("Сохранить")
+                Text(
+                    "Сохранить",
+                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
+                )
             }
         }
         Spacer(Modifier.height(16.dp))
