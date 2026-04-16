@@ -1,14 +1,9 @@
 package ru.techgid.presentation.screen.viewer3d
 
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -21,14 +16,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.VisibilityOff
@@ -44,7 +37,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -52,7 +44,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -67,7 +58,11 @@ fun Viewer3DScreen(
     onBack: () -> Unit = {},
 ) {
     val carName by viewModel.carName.collectAsState()
-    var zoomLevel by remember { mutableFloatStateOf(1f) }
+
+    val mesh = remember { buildCarMesh() }
+    val cameraState = remember { Car3DCameraState() }
+    var hiddenPartIds by remember { mutableStateOf<Set<String>>(emptySet()) }
+
     val parts = remember {
         listOf(
             PartInfo("Двигатель", "2.0 TFSI", "Моторный отсек", "2.0 TFSI, 4 цилиндра, 211 л.с., непосредственный впрыск, турбонаддув. Цепь ГРМ, интеркулер.", Difficulty.MEDIUM),
@@ -79,19 +74,22 @@ fun Viewer3DScreen(
             PartInfo("Салон", "Климат-контроль", "Торпедо · центральная консоль", "Климат-контроль, мультимедиа MMI, электрорегулировка сидений, подогрев передних сидений.", Difficulty.EASY),
         )
     }
+
+    val partHighlightMap = remember {
+        mapOf(
+            0 to setOf(PartId.HOOD),
+            1 to setOf(PartId.TRUNK),
+            2 to setOf(PartId.WHEEL_FL, PartId.WHEEL_FR, PartId.WHEEL_RL, PartId.WHEEL_RR),
+            3 to setOf(PartId.WHEEL_FL, PartId.WHEEL_FR, PartId.WHEEL_RL, PartId.WHEEL_RR),
+            4 to setOf(PartId.HOOD),
+            5 to setOf(PartId.BODY),
+            6 to setOf(PartId.CABIN, PartId.GLASS),
+        )
+    }
+
     var selectedPartIndex by remember { mutableStateOf(1) }
     val selectedPart = parts[selectedPartIndex]
-
-    val infiniteTransition = rememberInfiniteTransition(label = "rotate")
-    val rotation by infiniteTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = 360f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 12000, easing = LinearEasing),
-            repeatMode = RepeatMode.Restart,
-        ),
-        label = "rotation",
-    )
+    val highlightedIds = partHighlightMap[selectedPartIndex] ?: emptySet()
 
     Column(
         modifier = Modifier
@@ -146,15 +144,16 @@ fun Viewer3DScreen(
                         ),
                     ),
                 ),
-            contentAlignment = Alignment.Center,
         ) {
-            Icon(
-                imageVector = Icons.Filled.DirectionsCar,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
-                modifier = Modifier
-                    .size((160 * zoomLevel).dp)
-                    .rotate(rotation),
+            Car3DRenderer(
+                mesh = mesh,
+                cameraState = cameraState,
+                modifier = Modifier.fillMaxSize(),
+                options = RenderOptions(
+                    highlightedPartIds = highlightedIds,
+                    hiddenPartIds = hiddenPartIds,
+                ),
+                accentColor = MaterialTheme.colorScheme.primary,
             )
 
             // Zoom controls
@@ -164,9 +163,15 @@ fun Viewer3DScreen(
                     .padding(12.dp),
                 verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
-                ControlButton(Icons.Filled.ZoomIn) { zoomLevel = (zoomLevel + 0.15f).coerceAtMost(2.5f) }
-                ControlButton(Icons.Filled.ZoomOut) { zoomLevel = (zoomLevel - 0.15f).coerceAtLeast(0.4f) }
-                ControlButton(Icons.Filled.Refresh) { zoomLevel = 1f }
+                ControlButton(Icons.Filled.ZoomIn) {
+                    cameraState.zoom = (cameraState.zoom + 0.15f).coerceAtMost(2.5f)
+                }
+                ControlButton(Icons.Filled.ZoomOut) {
+                    cameraState.zoom = (cameraState.zoom - 0.15f).coerceAtLeast(0.4f)
+                }
+                ControlButton(Icons.Filled.Refresh) {
+                    cameraState.reset()
+                }
             }
 
             // Zoom level indicator
@@ -179,7 +184,7 @@ fun Viewer3DScreen(
                     .padding(horizontal = 8.dp, vertical = 4.dp),
             ) {
                 Text(
-                    text = "${(zoomLevel * 100).toInt()}%",
+                    text = "${(cameraState.zoom * 100).toInt()}%",
                     style = MaterialTheme.typography.labelSmall,
                     color = TechGidTheme.extendedColors.textTertiary,
                 )
@@ -279,7 +284,14 @@ fun Viewer3DScreen(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 OutlinedButton(
-                    onClick = { },
+                    onClick = {
+                        val ids = partHighlightMap[selectedPartIndex] ?: emptySet()
+                        hiddenPartIds = if (ids.any { it in hiddenPartIds }) {
+                            hiddenPartIds - ids
+                        } else {
+                            hiddenPartIds + ids
+                        }
+                    },
                     modifier = Modifier.weight(1f),
                     shape = RoundedCornerShape(14.dp),
                 ) {
@@ -292,7 +304,10 @@ fun Viewer3DScreen(
                     Text("Скрыть слой", style = MaterialTheme.typography.labelMedium)
                 }
                 OutlinedButton(
-                    onClick = { },
+                    onClick = {
+                        cameraState.reset()
+                        hiddenPartIds = emptySet()
+                    },
                     modifier = Modifier.weight(1f),
                     shape = RoundedCornerShape(14.dp),
                 ) {
