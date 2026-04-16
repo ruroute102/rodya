@@ -59,7 +59,7 @@ fun Viewer3DScreen(
 ) {
     val carName by viewModel.carName.collectAsState()
 
-    val mesh = remember { buildCarMesh() }
+    val mesh by viewModel.mesh.collectAsState()
     val cameraState = remember { Car3DCameraState() }
     var hiddenPartIds by remember { mutableStateOf<Set<String>>(emptySet()) }
 

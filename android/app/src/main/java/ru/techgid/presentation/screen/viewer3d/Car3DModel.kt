@@ -298,3 +298,278 @@ private fun addHexCylinder(
         faces += Face(rightCenter, base + segments + i1, base + segments + i2, partId, hubColor)
     }
 }
+
+private fun addCylinder(
+    verts: MutableList<Vec3>,
+    faces: MutableList<Face>,
+    center: Vec3,
+    radius: Float,
+    width: Float,
+    segments: Int,
+    partId: String,
+    tireColor: Color,
+    hubColor: Color,
+) {
+    val base = verts.size
+    val halfW = width / 2f
+    for (side in 0..1) {
+        val x = center.x + (if (side == 0) -halfW else halfW)
+        for (i in 0 until segments) {
+            val a = (i.toFloat() / segments) * (2f * kotlin.math.PI.toFloat())
+            verts += Vec3(x, center.y + radius * cos(a), center.z + radius * sin(a))
+        }
+    }
+    verts += Vec3(center.x - halfW, center.y, center.z)
+    verts += Vec3(center.x + halfW, center.y, center.z)
+    val lc = base + 2 * segments
+    val rc = base + 2 * segments + 1
+    for (i in 0 until segments) {
+        val i2 = (i + 1) % segments
+        faces += Face(base + i, base + i2, base + segments + i2, partId, tireColor)
+        faces += Face(base + i, base + segments + i2, base + segments + i, partId, tireColor)
+        faces += Face(lc, base + i2, base + i, partId, hubColor)
+        faces += Face(rc, base + segments + i, base + segments + i2, partId, hubColor)
+    }
+}
+
+// Arbitrary 8-point solid. Vertex order (mirrors addBox vertex layout):
+//   p0=FBL  p1=FBR  p2=FTR  p3=FTL   (front / Z+ face)
+//   p4=BBL  p5=BBR  p6=BTR  p7=BTL   (back  / Z- face)
+// Winding is derived from the verified addBox winding — outward normals guaranteed
+// for convex shapes.
+private fun addPrism(
+    verts: MutableList<Vec3>,
+    faces: MutableList<Face>,
+    p0: Vec3, p1: Vec3, p2: Vec3, p3: Vec3,
+    p4: Vec3, p5: Vec3, p6: Vec3, p7: Vec3,
+    partId: String,
+    color: Color,
+    bottomColor: Color = color,
+) {
+    val b = verts.size
+    verts += p0; verts += p1; verts += p2; verts += p3
+    verts += p4; verts += p5; verts += p6; verts += p7
+    faces += Face(b+7, b+2, b+6, partId, color)   // top
+    faces += Face(b+7, b+3, b+2, partId, color)
+    faces += Face(b+4, b+5, b+1, partId, bottomColor) // bottom
+    faces += Face(b+4, b+1, b+0, partId, bottomColor)
+    faces += Face(b+0, b+1, b+2, partId, color)   // front
+    faces += Face(b+0, b+2, b+3, partId, color)
+    faces += Face(b+5, b+4, b+7, partId, color)   // back
+    faces += Face(b+5, b+7, b+6, partId, color)
+    faces += Face(b+1, b+5, b+6, partId, color)   // right
+    faces += Face(b+1, b+6, b+2, partId, color)
+    faces += Face(b+4, b+0, b+3, partId, color)   // left
+    faces += Face(b+4, b+3, b+7, partId, color)
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Audi Q3 2011 (8U) — low-poly procedural mesh matching the real car's
+// proportions: L=4.39m, W=1.83m, H=1.58m, WB=2.60m.
+// Coordinate origin at ground-centre of wheelbase.
+// ─────────────────────────────────────────────────────────────────────────────
+fun buildAudiQ3Mesh(): Mesh {
+    val verts = mutableListOf<Vec3>()
+    val faces = mutableListOf<Face>()
+
+    // ── Palette ──────────────────────────────────────────────────────────
+    val body      = Color(0xFFF2F2F0)  // glacier white metallic
+    val bodyDark  = Color(0xFFCCCCCA)
+    val bump      = Color(0xFFE0E0DE)  // bumper plastic
+    val glass     = Color(0xFF1A2535)
+    val pillar    = Color(0xFF1A1A1A)  // black A/B/C-pillars
+    val tire      = Color(0xFF181818)
+    val hub       = Color(0xFFCECECE)  // silver 18" alloys
+    val grille    = Color(0xFF0C0C0C)
+    val chrome    = Color(0xFFBEBEBE)
+    val headL     = Color(0xFFF0F6FF)
+    val tailR     = Color(0xFFCC1100)
+    val sill      = Color(0xFF5A5A5A)
+    val roofRail  = Color(0xFFAAAAAA)
+
+    // ── Key geometry ─────────────────────────────────────────────────────
+    val hw   = 0.915f   // half-width
+    val fa   =  1.30f   // front axle Z
+    val ra   = -1.30f   // rear axle Z
+    val wx   =  0.785f  // wheel-centre X offset
+    val wr   =  0.330f  // wheel radius (18" ≈ 660 mm diam)
+    val ww   =  0.230f  // wheel width
+    val bb   =  0.19f   // body bottom Y
+    val belt =  0.87f   // beltline / bottom-of-glass Y
+    val wtop =  1.37f   // top-of-glass Y
+    val roof =  1.58f   // roof Y
+
+    // ── 1. Main lower body ───────────────────────────────────────────────
+    val bodyMidY = (bb + belt) / 2f
+    val bodyH    = belt - bb
+    addBox(verts, faces, Vec3(0f, bodyMidY, 0f),
+        Vec3(hw * 2f, bodyH, 4.34f), PartId.BODY, body, bodyDark)
+
+    // ── 2. Front bumper fascia ───────────────────────────────────────────
+    addBox(verts, faces, Vec3(0f, 0.445f, 2.14f),
+        Vec3(hw * 2f, 0.51f, 0.10f), PartId.BODY, bump, bodyDark)
+
+    // ── 3. Lower front apron ─────────────────────────────────────────────
+    addBox(verts, faces, Vec3(0f, bb + 0.04f, 2.13f),
+        Vec3(1.68f, 0.09f, 0.12f), PartId.BODY, sill, bodyDark)
+
+    // ── 4. Audi single-frame grille (wide trapezoid, inset) ──────────────
+    // Main dark area
+    addBox(verts, faces, Vec3(0f, 0.595f, 2.165f),
+        Vec3(1.34f, 0.47f, 0.055f), PartId.HOOD, grille, grille)
+    // Chrome surround top bar
+    addBox(verts, faces, Vec3(0f, 0.845f, 2.175f),
+        Vec3(1.46f, 0.065f, 0.05f), PartId.HOOD, chrome, chrome)
+    // Chrome surround bottom bar
+    addBox(verts, faces, Vec3(0f, 0.365f, 2.175f),
+        Vec3(1.46f, 0.065f, 0.05f), PartId.HOOD, chrome, chrome)
+
+    // ── 5. Headlights — semi-vertical, at grille corners ─────────────────
+    for (sign in listOf(-1f, 1f)) {
+        val cx = sign * 0.790f
+        addBox(verts, faces, Vec3(cx, 0.805f, 2.12f),
+            Vec3(0.24f, 0.43f, 0.10f), PartId.HEADLIGHT, headL, headL)
+        // DRL strip (thin bright bar below main lens)
+        addBox(verts, faces, Vec3(cx, 0.605f, 2.175f),
+            Vec3(0.20f, 0.06f, 0.03f), PartId.HEADLIGHT, Color(0xFFFFFFEE), Color(0xFFFFFFEE))
+    }
+
+    // ── 6. Hood (slight ramp: front edge lower, firewall edge higher) ─────
+    val hdW = 1.76f
+    addPrism(verts, faces,
+        Vec3(-hdW/2f, belt,  2.09f), Vec3(hdW/2f, belt,  2.09f),
+        Vec3( hdW/2f, 0.92f, 2.09f), Vec3(-hdW/2f, 0.92f, 2.09f),
+        Vec3(-hdW/2f, belt,  0.52f), Vec3(hdW/2f, belt,  0.52f),
+        Vec3( hdW/2f, 0.97f, 0.52f), Vec3(-hdW/2f, 0.97f, 0.52f),
+        PartId.HOOD, body, bodyDark)
+
+    // ── 7. Windshield (raked ~55° from vertical) ──────────────────────────
+    val wsW = 1.66f
+    addPrism(verts, faces,
+        Vec3(-wsW/2f, 0.97f, 0.52f), Vec3(wsW/2f, 0.97f, 0.52f),
+        Vec3( wsW/2f, wtop,  0.07f), Vec3(-wsW/2f, wtop,  0.07f),
+        Vec3(-wsW/2f, 0.97f, 0.48f), Vec3(wsW/2f, 0.97f, 0.48f),
+        Vec3( wsW/2f, wtop,  0.03f), Vec3(-wsW/2f, wtop,  0.03f),
+        PartId.GLASS, glass, glass)
+
+    // ── 8. Roof ───────────────────────────────────────────────────────────
+    val roofMidZ = (0.07f + (-1.63f)) / 2f
+    val roofLen  = 0.07f - (-1.63f)
+    addBox(verts, faces, Vec3(0f, (wtop + roof) / 2f, roofMidZ),
+        Vec3(1.70f, roof - wtop, roofLen), PartId.CABIN, body, bodyDark)
+
+    // ── 9. A-pillars (body-coloured strip beside windshield) ──────────────
+    for (sign in listOf(-1f, 1f)) {
+        addBox(verts, faces, Vec3(sign * (hw - 0.07f), (belt + wtop) / 2f, 0.295f),
+            Vec3(0.10f, wtop - belt, 0.44f), PartId.CABIN, body, bodyDark)
+    }
+
+    // ── 10. B-pillars (black centre post) ────────────────────────────────
+    for (sign in listOf(-1f, 1f)) {
+        addBox(verts, faces, Vec3(sign * (hw - 0.06f), (belt + wtop) / 2f, 0.055f),
+            Vec3(0.08f, wtop - belt, 0.13f), PartId.CABIN, pillar, pillar)
+    }
+
+    // ── 11. C-pillars ────────────────────────────────────────────────────
+    for (sign in listOf(-1f, 1f)) {
+        addBox(verts, faces, Vec3(sign * (hw - 0.07f), (belt + wtop) / 2f, -0.87f),
+            Vec3(0.10f, wtop - belt, 0.13f), PartId.CABIN, body, bodyDark)
+    }
+
+    // ── 12. D-pillars (rear uprights, prominent on Q3) ───────────────────
+    for (sign in listOf(-1f, 1f)) {
+        addBox(verts, faces, Vec3(sign * (hw - 0.07f), (belt + roof) / 2f + 0.02f, -1.62f),
+            Vec3(0.11f, roof - belt + 0.06f, 0.14f), PartId.CABIN, body, bodyDark)
+    }
+
+    // ── 13. Side glass — front door ───────────────────────────────────────
+    for (sign in listOf(-1f, 1f)) {
+        addBox(verts, faces, Vec3(sign * hw, (belt + wtop) / 2f, 0.525f),
+            Vec3(0.05f, wtop - belt - 0.04f, 0.82f), PartId.GLASS, glass, glass)
+    }
+
+    // ── 14. Side glass — rear door ────────────────────────────────────────
+    for (sign in listOf(-1f, 1f)) {
+        addBox(verts, faces, Vec3(sign * hw, (belt + wtop) / 2f, -0.415f),
+            Vec3(0.05f, wtop - belt - 0.04f, 0.76f), PartId.GLASS, glass, glass)
+    }
+
+    // ── 15. Quarter glass (C-pillar window) ──────────────────────────────
+    for (sign in listOf(-1f, 1f)) {
+        addBox(verts, faces, Vec3(sign * hw, (belt + wtop) / 2f + 0.02f, -1.275f),
+            Vec3(0.05f, wtop - belt - 0.18f, 0.48f), PartId.GLASS, glass, glass)
+    }
+
+    // ── 16. Rear window (nearly upright, slight rake) ─────────────────────
+    // Outside faces -Z; we swap front/back so the "back face" is the outside.
+    val rwW = 1.62f
+    addPrism(verts, faces,
+        // inside (p0-p3): slightly toward +Z from outside
+        Vec3(-rwW/2f, belt + 0.06f, -2.04f), Vec3(rwW/2f, belt + 0.06f, -2.04f),
+        Vec3( rwW/2f, wtop - 0.02f, -1.65f), Vec3(-rwW/2f, wtop - 0.02f, -1.65f),
+        // outside (p4-p7)
+        Vec3(-rwW/2f, belt + 0.06f, -2.08f), Vec3(rwW/2f, belt + 0.06f, -2.08f),
+        Vec3( rwW/2f, wtop - 0.02f, -1.69f), Vec3(-rwW/2f, wtop - 0.02f, -1.69f),
+        PartId.GLASS, glass, glass)
+
+    // ── 17. Rear hatch upper panel (above rear window) ────────────────────
+    addBox(verts, faces, Vec3(0f, (wtop + roof) / 2f, -2.10f),
+        Vec3(1.72f, roof - wtop + 0.06f, 0.09f), PartId.TRUNK, body, bodyDark)
+
+    // ── 18. Rear hatch lower panel (below rear window) ────────────────────
+    addBox(verts, faces, Vec3(0f, (bb + belt + 0.06f) / 2f, -2.16f),
+        Vec3(1.72f, belt + 0.06f - bb, 0.09f), PartId.TRUNK, body, bodyDark)
+
+    // ── 19. Taillights — wide horizontal Q3-style ─────────────────────────
+    for (sign in listOf(-1f, 1f)) {
+        addBox(verts, faces, Vec3(sign * 0.595f, 0.795f, -2.115f),
+            Vec3(0.70f, 0.37f, 0.11f), PartId.TAILLIGHT, tailR, tailR)
+        // Inner amber strip
+        addBox(verts, faces, Vec3(sign * 0.245f, 0.795f, -2.118f),
+            Vec3(0.25f, 0.28f, 0.06f), PartId.TAILLIGHT, Color(0xFFFF5500), Color(0xFFFF5500))
+    }
+
+    // ── 20. Rear bumper ───────────────────────────────────────────────────
+    addBox(verts, faces, Vec3(0f, 0.335f, -2.14f),
+        Vec3(hw * 2f, 0.31f, 0.09f), PartId.TRUNK, bump, bodyDark)
+
+    // ── 21. Side sills (rocker panels) ───────────────────────────────────
+    for (sign in listOf(-1f, 1f)) {
+        addBox(verts, faces, Vec3(sign * (hw + 0.015f), 0.275f, -0.02f),
+            Vec3(0.065f, 0.17f, 3.52f), PartId.BODY, sill, bodyDark)
+    }
+
+    // ── 22. Wheel-arch flares (fender overhang) ───────────────────────────
+    for (sign in listOf(-1f, 1f)) {
+        // Front
+        addBox(verts, faces, Vec3(sign * (hw + 0.02f), 0.50f, fa),
+            Vec3(0.07f, 0.62f, 1.00f), PartId.BODY, body, bodyDark)
+        // Rear
+        addBox(verts, faces, Vec3(sign * (hw + 0.02f), 0.50f, ra),
+            Vec3(0.07f, 0.62f, 1.00f), PartId.BODY, body, bodyDark)
+    }
+
+    // ── 23. Roof rails ────────────────────────────────────────────────────
+    for (sign in listOf(-1f, 1f)) {
+        addBox(verts, faces, Vec3(sign * 0.73f, roof + 0.035f, roofMidZ),
+            Vec3(0.045f, 0.045f, roofLen - 0.30f), PartId.CABIN, roofRail, roofRail)
+    }
+
+    // ── 24. Wheels (12 segments for smooth look) ──────────────────────────
+    for ((xSign, zPos, pid) in listOf(
+        Triple(-1f, fa, PartId.WHEEL_FL), Triple(1f, fa, PartId.WHEEL_FR),
+        Triple(-1f, ra, PartId.WHEEL_RL), Triple(1f, ra, PartId.WHEEL_RR),
+    )) {
+        addCylinder(verts, faces, Vec3(xSign * wx, wr, zPos), wr, ww, 12, pid, tire, hub)
+    }
+
+    return Mesh(verts, faces)
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Factory: returns the appropriate Mesh for a given car name string.
+// ─────────────────────────────────────────────────────────────────────────────
+fun buildMeshForCar(carName: String): Mesh = when {
+    carName.contains("Audi Q3", ignoreCase = true) -> buildAudiQ3Mesh()
+    else -> buildCarMesh()
+}
