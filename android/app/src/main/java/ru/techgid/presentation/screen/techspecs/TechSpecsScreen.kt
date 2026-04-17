@@ -69,66 +69,7 @@ fun TechSpecsScreen(
     onBack: () -> Unit = {},
 ) {
     val carName by viewModel.carName.collectAsState()
-    val categories = remember {
-        listOf(
-            TechSpecCategory(
-                icon = Icons.Filled.Info,
-                name = "Жидкости и объёмы",
-                count = 6,
-                specs = listOf(
-                    TechSpec("Масло двигателя", "4.6", "л", "5W-30 / 5W-40"),
-                    TechSpec("Масло АКПП", "7.0", "л", "VAG G 060 162"),
-                    TechSpec("Антифриз", "8.5", "л", "G12++ / G13"),
-                    TechSpec("Тормозная жидкость", "1.0", "л", "DOT 4"),
-                    TechSpec("Бак", "60", "л"),
-                    TechSpec("Омыватель", "5.5", "л"),
-                ),
-            ),
-            TechSpecCategory(
-                icon = Icons.Filled.Speed,
-                name = "Давления",
-                count = 4,
-                specs = listOf(
-                    TechSpec("Топливная рампа", "4.5", "бар", "4.0–5.0 бар"),
-                    TechSpec("Давление масла (хол. ход.)", "1.5", "бар"),
-                    TechSpec("Давление масла (3000 об/мин)", "3.5", "бар"),
-                    TechSpec("Давление в шинах", "2.3", "бар", "Передние/задние"),
-                ),
-            ),
-            TechSpecCategory(
-                icon = Icons.Filled.Build,
-                name = "Моменты затяжки",
-                count = 5,
-                specs = listOf(
-                    TechSpec("Болты ГБЦ (1 этап)", "40", "Нм"),
-                    TechSpec("Болты ГБЦ (2 этап)", "+90°", "поворот"),
-                    TechSpec("Болты колеса", "120", "Нм"),
-                    TechSpec("Свечи зажигания", "25", "Нм"),
-                    TechSpec("Сливная пробка масла", "30", "Нм"),
-                ),
-            ),
-            TechSpecCategory(
-                icon = Icons.Filled.Settings,
-                name = "Зазоры",
-                count = 3,
-                specs = listOf(
-                    TechSpec("Зазор свечей зажигания", "0.8", "мм"),
-                    TechSpec("Зазор клапанов (впуск)", "0.20", "мм", "холодный двигатель"),
-                    TechSpec("Зазор клапанов (выпуск)", "0.30", "мм", "холодный двигатель"),
-                ),
-            ),
-            TechSpecCategory(
-                icon = Icons.Filled.Star,
-                name = "Электрика",
-                count = 3,
-                specs = listOf(
-                    TechSpec("Аккумулятор", "70", "А·ч", "EN 680A"),
-                    TechSpec("Генератор", "140", "А"),
-                    TechSpec("Напряжение зарядки", "14.2", "В", "13.8–14.6 В"),
-                ),
-            ),
-        )
-    }
+    val categories = remember(carName) { buildTechSpecs(carName) }
 
     var selectedCategory by remember { mutableStateOf<TechSpecCategory?>(null) }
 
@@ -304,3 +245,256 @@ private fun SpecRow(spec: TechSpec) {
         }
     }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Per-car tech specs data
+// ─────────────────────────────────────────────────────────────────────────────
+
+private fun buildTechSpecs(carName: String): List<TechSpecCategory> = when {
+    carName.contains("Audi Q3", ignoreCase = true) -> audiQ3Specs()
+    carName.contains("BMW", ignoreCase = true) -> bmwSpecs()
+    carName.contains("Toyota", ignoreCase = true) -> toyotaSpecs()
+    carName.contains("Volkswagen", ignoreCase = true) || carName.contains("VW", ignoreCase = true) -> vwGolfSpecs()
+    carName.contains("Lada", ignoreCase = true) || carName.contains("\u0412\u0410\u0417", ignoreCase = true) -> ladaVestaSpecs()
+    carName.contains("Mercedes", ignoreCase = true) -> mercedesSpecs()
+    carName.contains("Hyundai", ignoreCase = true) || carName.contains("Kia", ignoreCase = true) -> hyundaiSpecs()
+    else -> audiQ3Specs()
+}
+
+private fun specs(
+    icon: ImageVector,
+    name: String,
+    items: List<TechSpec>,
+) = TechSpecCategory(icon, name, items.size, items)
+
+private fun audiQ3Specs() = listOf(
+    specs(Icons.Filled.Info, "Жидкости и объёмы", listOf(
+        TechSpec("Масло двигателя", "4.6", "л", "5W-30 / 5W-40"),
+        TechSpec("Масло АКПП", "7.0", "л", "VAG G 060 162"),
+        TechSpec("Антифриз", "8.5", "л", "G12++ / G13"),
+        TechSpec("Тормозная жидкость", "1.0", "л", "DOT 4"),
+        TechSpec("Бак", "60", "л"),
+        TechSpec("Омыватель", "5.5", "л"),
+    )),
+    specs(Icons.Filled.Speed, "Давления", listOf(
+        TechSpec("Топливная рампа", "4.5", "бар", "4.0–5.0 бар"),
+        TechSpec("Давление масла (хол. ход.)", "1.5", "бар"),
+        TechSpec("Давление масла (3000 об/мин)", "3.5", "бар"),
+        TechSpec("Давление в шинах", "2.3", "бар", "Передние/задние"),
+    )),
+    specs(Icons.Filled.Build, "Моменты затяжки", listOf(
+        TechSpec("Болты ГБЦ (1 этап)", "40", "Нм"),
+        TechSpec("Болты ГБЦ (2 этап)", "+90°", "поворот"),
+        TechSpec("Болты колеса", "120", "Нм"),
+        TechSpec("Свечи зажигания", "25", "Нм"),
+        TechSpec("Сливная пробка масла", "30", "Нм"),
+    )),
+    specs(Icons.Filled.Settings, "Зазоры", listOf(
+        TechSpec("Зазор свечей зажигания", "0.8", "мм"),
+        TechSpec("Зазор клапанов (впуск)", "0.20", "мм", "холодный двигатель"),
+        TechSpec("Зазор клапанов (выпуск)", "0.30", "мм", "холодный двигатель"),
+    )),
+    specs(Icons.Filled.Star, "Электрика", listOf(
+        TechSpec("Аккумулятор", "70", "А·ч", "EN 680A"),
+        TechSpec("Генератор", "140", "А"),
+        TechSpec("Напряжение зарядки", "14.2", "В", "13.8–14.6 В"),
+    )),
+)
+
+private fun bmwSpecs() = listOf(
+    specs(Icons.Filled.Info, "Жидкости и объёмы", listOf(
+        TechSpec("Масло двигателя", "6.5", "л", "0W-30 BMW LL-04"),
+        TechSpec("Масло АКПП ZF 8HP", "9.0", "л", "ZF Lifeguard 8"),
+        TechSpec("Антифриз", "11.0", "л", "BMW LLC"),
+        TechSpec("Тормозная жидкость", "1.2", "л", "DOT 4 Low Viscosity"),
+        TechSpec("Бак", "83", "л"),
+        TechSpec("Омыватель", "6.5", "л"),
+    )),
+    specs(Icons.Filled.Speed, "Давления", listOf(
+        TechSpec("Давление масла (хол. ход.)", "1.0", "бар", "мин. 0.7 бар"),
+        TechSpec("Давление масла (3000 об/мин)", "4.0", "бар"),
+        TechSpec("Давление в шинах (перед)", "2.5", "бар"),
+        TechSpec("Давление в шинах (зад)", "2.8", "бар"),
+    )),
+    specs(Icons.Filled.Build, "Моменты затяжки", listOf(
+        TechSpec("Болты ГБЦ (1 этап)", "30", "Нм"),
+        TechSpec("Болты ГБЦ (2 этап)", "+90° + 90°", "поворот"),
+        TechSpec("Болты колеса", "140", "Нм"),
+        TechSpec("Свечи накала", "10", "Нм"),
+        TechSpec("Сливная пробка масла", "25", "Нм"),
+    )),
+    specs(Icons.Filled.Settings, "Зазоры", listOf(
+        TechSpec("Зазор клапанов", "—", "", notes = "гидрокомпенсаторы, регулировка не требуется"),
+    )),
+    specs(Icons.Filled.Star, "Электрика", listOf(
+        TechSpec("Аккумулятор", "90", "А·ч", "AGM 900A"),
+        TechSpec("Генератор", "220", "А"),
+        TechSpec("Напряжение зарядки", "14.4", "В", "14.0–14.8 В"),
+    )),
+)
+
+private fun toyotaSpecs() = listOf(
+    specs(Icons.Filled.Info, "Жидкости и объёмы", listOf(
+        TechSpec("Масло двигателя", "4.8", "л", "0W-20 ILSAC GF-6A"),
+        TechSpec("Масло вариатора CVT", "7.4", "л", "Toyota CVT Fluid TC"),
+        TechSpec("Антифриз", "6.9", "л", "Toyota Super LLC"),
+        TechSpec("Тормозная жидкость", "0.8", "л", "DOT 3"),
+        TechSpec("Бак", "60", "л"),
+        TechSpec("Омыватель", "4.7", "л"),
+    )),
+    specs(Icons.Filled.Speed, "Давления", listOf(
+        TechSpec("Топливная рампа", "3.5", "бар", "3.1–3.9 бар"),
+        TechSpec("Давление масла (хол. ход.)", "0.3", "бар", "мин. 0.2 бар"),
+        TechSpec("Давление масла (3000 об/мин)", "3.0", "бар"),
+        TechSpec("Давление в шинах", "2.3", "бар", "Передние/задние"),
+    )),
+    specs(Icons.Filled.Build, "Моменты затяжки", listOf(
+        TechSpec("Болты ГБЦ (1 этап)", "27", "Нм"),
+        TechSpec("Болты ГБЦ (2 этап)", "+90° + 90°", "поворот"),
+        TechSpec("Гайки колеса", "103", "Нм"),
+        TechSpec("Свечи зажигания (иридий)", "18", "Нм"),
+        TechSpec("Сливная пробка масла", "29", "Нм"),
+    )),
+    specs(Icons.Filled.Settings, "Зазоры", listOf(
+        TechSpec("Зазор свечей зажигания", "1.1", "мм", "иридиевые, не регулируются"),
+        TechSpec("Зазор клапанов", "—", "", notes = "гидрокомпенсаторы, регулировка не требуется"),
+    )),
+    specs(Icons.Filled.Star, "Электрика", listOf(
+        TechSpec("Аккумулятор", "60", "А·ч", "CCA 590A"),
+        TechSpec("Генератор", "130", "А"),
+        TechSpec("Напряжение зарядки", "14.0", "В", "13.6–14.4 В"),
+    )),
+)
+
+private fun vwGolfSpecs() = listOf(
+    specs(Icons.Filled.Info, "Жидкости и объёмы", listOf(
+        TechSpec("Масло двигателя", "3.6", "л", "5W-30 VW 504.00"),
+        TechSpec("Масло DSG DQ200", "6.0", "л", "VAG G 052 182"),
+        TechSpec("Антифриз", "5.6", "л", "G13"),
+        TechSpec("Тормозная жидкость", "0.7", "л", "DOT 4"),
+        TechSpec("Бак", "50", "л"),
+        TechSpec("Омыватель", "5.5", "л"),
+    )),
+    specs(Icons.Filled.Speed, "Давления", listOf(
+        TechSpec("Топливная рампа", "150", "бар", "непоср. впрыск TSI"),
+        TechSpec("Давление масла (хол. ход.)", "2.0", "бар"),
+        TechSpec("Давление масла (3000 об/мин)", "4.0", "бар"),
+        TechSpec("Давление в шинах", "2.1", "бар", "Передние/задние"),
+    )),
+    specs(Icons.Filled.Build, "Моменты затяжки", listOf(
+        TechSpec("Болты ГБЦ (1 этап)", "40", "Нм"),
+        TechSpec("Болты ГБЦ (2 этап)", "+90° + 90°", "поворот"),
+        TechSpec("Болты колеса", "120", "Нм"),
+        TechSpec("Свечи зажигания", "25", "Нм"),
+        TechSpec("Сливная пробка масла", "30", "Нм"),
+    )),
+    specs(Icons.Filled.Settings, "Зазоры", listOf(
+        TechSpec("Зазор свечей зажигания", "0.7", "мм"),
+        TechSpec("Зазор клапанов", "—", "", notes = "гидрокомпенсаторы, регулировка не требуется"),
+    )),
+    specs(Icons.Filled.Star, "Электрика", listOf(
+        TechSpec("Аккумулятор", "59", "А·ч", "EN 540A"),
+        TechSpec("Генератор", "140", "А"),
+        TechSpec("Напряжение зарядки", "14.2", "В", "13.8–14.6 В"),
+    )),
+)
+
+private fun ladaVestaSpecs() = listOf(
+    specs(Icons.Filled.Info, "Жидкости и объёмы", listOf(
+        TechSpec("Масло двигателя", "4.4", "л", "5W-40 API SN"),
+        TechSpec("Масло МКПП", "2.25", "л", "TAD-17И / 75W-85 GL-4"),
+        TechSpec("Антифриз", "7.0", "л", "Coolstream NRC"),
+        TechSpec("Тормозная жидкость", "0.5", "л", "DOT 4"),
+        TechSpec("Бак", "55", "л"),
+        TechSpec("Омыватель", "4.7", "л"),
+    )),
+    specs(Icons.Filled.Speed, "Давления", listOf(
+        TechSpec("Топливная рампа", "3.8", "бар", "3.6–4.0 бар"),
+        TechSpec("Давление масла (хол. ход.)", "0.8", "бар"),
+        TechSpec("Давление масла (3000 об/мин)", "2.5", "бар"),
+        TechSpec("Давление в шинах", "2.1", "бар", "185/65 R15"),
+    )),
+    specs(Icons.Filled.Build, "Моменты затяжки", listOf(
+        TechSpec("Болты ГБЦ (1 этап)", "20", "Нм"),
+        TechSpec("Болты ГБЦ (2 этап)", "+90° + 90°", "поворот"),
+        TechSpec("Болты колеса", "90", "Нм"),
+        TechSpec("Свечи зажигания", "25", "Нм"),
+        TechSpec("Сливная пробка масла", "35", "Нм"),
+    )),
+    specs(Icons.Filled.Settings, "Зазоры", listOf(
+        TechSpec("Зазор свечей зажигания", "1.0", "мм"),
+        TechSpec("Зазор клапанов (впуск)", "0.20", "мм", "холодный двигатель"),
+        TechSpec("Зазор клапанов (выпуск)", "0.35", "мм", "холодный двигатель"),
+    )),
+    specs(Icons.Filled.Star, "Электрика", listOf(
+        TechSpec("Аккумулятор", "62", "А·ч", "EN 600A"),
+        TechSpec("Генератор", "115", "А"),
+        TechSpec("Напряжение зарядки", "13.9", "В", "13.6–14.4 В"),
+    )),
+)
+
+private fun mercedesSpecs() = listOf(
+    specs(Icons.Filled.Info, "Жидкости и объёмы", listOf(
+        TechSpec("Масло двигателя", "5.5", "л", "5W-30 MB 229.52"),
+        TechSpec("Масло АКПП 9G-Tronic", "8.5", "л", "MB 236.17"),
+        TechSpec("Антифриз", "9.5", "л", "MB 325.6"),
+        TechSpec("Тормозная жидкость", "1.0", "л", "DOT 4+"),
+        TechSpec("Бак", "66", "л"),
+        TechSpec("Омыватель", "5.0", "л"),
+    )),
+    specs(Icons.Filled.Speed, "Давления", listOf(
+        TechSpec("Давление масла (хол. ход.)", "1.2", "бар"),
+        TechSpec("Давление масла (3000 об/мин)", "3.8", "бар"),
+        TechSpec("Давление в шинах (перед)", "2.3", "бар"),
+        TechSpec("Давление в шинах (зад)", "2.6", "бар"),
+    )),
+    specs(Icons.Filled.Build, "Моменты затяжки", listOf(
+        TechSpec("Болты ГБЦ (1 этап)", "40", "Нм"),
+        TechSpec("Болты ГБЦ (2 этап)", "+90° + 90°", "поворот"),
+        TechSpec("Болты колеса", "130", "Нм"),
+        TechSpec("Свечи зажигания", "22", "Нм"),
+        TechSpec("Сливная пробка масла", "25", "Нм"),
+    )),
+    specs(Icons.Filled.Settings, "Зазоры", listOf(
+        TechSpec("Зазор клапанов", "—", "", notes = "гидрокомпенсаторы, регулировка не требуется"),
+    )),
+    specs(Icons.Filled.Star, "Электрика", listOf(
+        TechSpec("Аккумулятор", "80", "А·ч", "AGM 800A"),
+        TechSpec("Генератор", "200", "А"),
+        TechSpec("Напряжение зарядки", "14.3", "В", "14.0–14.7 В"),
+    )),
+)
+
+private fun hyundaiSpecs() = listOf(
+    specs(Icons.Filled.Info, "Жидкости и объёмы", listOf(
+        TechSpec("Масло двигателя", "4.0", "л", "5W-30 API SP"),
+        TechSpec("Масло АКПП", "6.8", "л", "ATF SP-IV"),
+        TechSpec("Антифриз", "6.3", "л", "Hyundai LLC"),
+        TechSpec("Тормозная жидкость", "0.8", "л", "DOT 4"),
+        TechSpec("Бак", "50", "л"),
+        TechSpec("Омыватель", "4.0", "л"),
+    )),
+    specs(Icons.Filled.Speed, "Давления", listOf(
+        TechSpec("Топливная рампа", "3.5", "бар", "3.0–4.0 бар"),
+        TechSpec("Давление масла (хол. ход.)", "1.0", "бар"),
+        TechSpec("Давление масла (3000 об/мин)", "3.0", "бар"),
+        TechSpec("Давление в шинах", "2.3", "бар"),
+    )),
+    specs(Icons.Filled.Build, "Моменты затяжки", listOf(
+        TechSpec("Болты ГБЦ (1 этап)", "22", "Нм"),
+        TechSpec("Болты ГБЦ (2 этап)", "+90° + 90°", "поворот"),
+        TechSpec("Гайки колеса", "110", "Нм"),
+        TechSpec("Свечи зажигания", "15", "Нм"),
+        TechSpec("Сливная пробка масла", "35", "Нм"),
+    )),
+    specs(Icons.Filled.Settings, "Зазоры", listOf(
+        TechSpec("Зазор свечей зажигания", "1.0", "мм"),
+        TechSpec("Зазор клапанов (впуск)", "0.17", "мм", "холодный двигатель"),
+        TechSpec("Зазор клапанов (выпуск)", "0.27", "мм", "холодный двигатель"),
+    )),
+    specs(Icons.Filled.Star, "Электрика", listOf(
+        TechSpec("Аккумулятор", "60", "А·ч", "CCA 550A"),
+        TechSpec("Генератор", "130", "А"),
+        TechSpec("Напряжение зарядки", "14.1", "В", "13.7–14.5 В"),
+    )),
+)

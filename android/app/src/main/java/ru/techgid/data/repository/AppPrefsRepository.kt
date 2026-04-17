@@ -28,6 +28,8 @@ class AppPrefsRepository @Inject constructor(
         val SELECTED_CONFIG_ID = intPreferencesKey("selected_config_id")
         val SELECTED_CAR_NAME = stringPreferencesKey("selected_car_name")
 
+        val RECENT_SEARCHES = stringPreferencesKey("recent_searches")
+
         val PROFILE_NAME = stringPreferencesKey("profile_name")
         val PROFILE_PHONE = stringPreferencesKey("profile_phone")
         val PROFILE_LOGGED_IN = booleanPreferencesKey("profile_logged_in")
@@ -42,6 +44,20 @@ class AppPrefsRepository @Inject constructor(
     val selectedConfigId: Flow<Int> = dataStore.data.map { it[Keys.SELECTED_CONFIG_ID] ?: 1 }
     val selectedCarName: Flow<String> = dataStore.data.map {
         it[Keys.SELECTED_CAR_NAME] ?: "Audi Q3 2011 · 2.0 TFSI"
+    }
+
+    val recentSearches: Flow<List<String>> = dataStore.data.map { prefs ->
+        val raw = prefs[Keys.RECENT_SEARCHES] ?: ""
+        if (raw.isBlank()) emptyList() else raw.split("|")
+    }
+
+    suspend fun addRecentSearch(query: String) {
+        dataStore.edit { prefs ->
+            val current = (prefs[Keys.RECENT_SEARCHES] ?: "")
+                .split("|").filter { it.isNotBlank() }
+            val updated = (listOf(query) + current.filter { it != query }).take(10)
+            prefs[Keys.RECENT_SEARCHES] = updated.joinToString("|")
+        }
     }
 
     val profileName: Flow<String> = dataStore.data.map { it[Keys.PROFILE_NAME] ?: "" }

@@ -13,15 +13,17 @@ import ru.techgid.domain.model.GuideListItem
 import ru.techgid.domain.repository.GuideRepository
 import javax.inject.Inject
 
+private val DEFAULT_RECENT = listOf(
+    "топливный насос",
+    "замена масла",
+    "тормозные колодки",
+    "воздушный фильтр",
+)
+
 data class SearchUiState(
     val query: String = "",
     val results: List<GuideListItem> = emptyList(),
-    val recentQueries: List<String> = listOf(
-        "топливный насос",
-        "замена масла",
-        "тормозные колодки",
-        "воздушный фильтр",
-    ),
+    val recentQueries: List<String> = DEFAULT_RECENT,
     val isSearching: Boolean = false,
 )
 
@@ -34,6 +36,15 @@ class SearchViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(SearchUiState())
     val uiState: StateFlow<SearchUiState> = _uiState.asStateFlow()
 
+    init {
+        viewModelScope.launch {
+            prefs.recentSearches.collect { saved ->
+                val queries = saved.ifEmpty { DEFAULT_RECENT }
+                _uiState.update { it.copy(recentQueries = queries) }
+            }
+        }
+    }
+
     fun search(query: String) {
         _uiState.update { it.copy(query = query) }
         if (query.isBlank()) {
@@ -42,6 +53,7 @@ class SearchViewModel @Inject constructor(
         }
         viewModelScope.launch {
             _uiState.update { it.copy(isSearching = true) }
+            prefs.addRecentSearch(query)
             try {
                 val result = guideRepository.getGuides(search = query)
                 _uiState.update { it.copy(results = result.items, isSearching = false) }
