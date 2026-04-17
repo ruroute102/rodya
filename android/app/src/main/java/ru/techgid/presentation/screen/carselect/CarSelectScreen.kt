@@ -1,11 +1,5 @@
 package ru.techgid.presentation.screen.carselect
 
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -22,7 +16,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -47,9 +40,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -58,6 +49,9 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import ru.techgid.presentation.components.CarSelectorItem
 import ru.techgid.presentation.components.PrimaryButton
+import ru.techgid.presentation.screen.viewer3d.Car3DCameraState
+import ru.techgid.presentation.screen.viewer3d.Car3DRenderer
+import ru.techgid.presentation.screen.viewer3d.buildMeshForCar
 import ru.techgid.presentation.theme.TechGidTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -78,18 +72,6 @@ fun CarSelectScreen(
         state.selectedGeneration,
         state.selectedEngine,
     ).size
-
-    // Subtle rotation for car icon
-    val infiniteTransition = rememberInfiniteTransition(label = "car_idle")
-    val idleRotation by infiniteTransition.animateFloat(
-        initialValue = -2f,
-        targetValue = 2f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(3000, easing = LinearEasing),
-            repeatMode = RepeatMode.Reverse,
-        ),
-        label = "idle_rotation",
-    )
 
     Column(
         modifier = Modifier
@@ -194,7 +176,7 @@ fun CarSelectScreen(
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            // Car illustration area
+            // Car illustration area — live 3D preview
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -208,43 +190,72 @@ fun CarSelectScreen(
                                 MaterialTheme.colorScheme.surface,
                             ),
                         ),
-                    )
-                    .alpha(if (state.selectedBrand != null) 1f else 0.5f),
+                    ),
                 contentAlignment = Alignment.Center,
             ) {
-                // Background grid dots for 3D feel
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Icon(
-                        imageVector = Icons.Filled.DirectionsCar,
-                        contentDescription = null,
-                        modifier = Modifier
-                            .size(if (state.isComplete) 110.dp else 90.dp)
-                            .rotate(if (state.isComplete) idleRotation else 0f),
-                        tint = MaterialTheme.colorScheme.primary.copy(
-                            alpha = if (state.isComplete) 0.7f else 0.35f,
-                        ),
-                    )
-                    if (state.isComplete) {
-                        Spacer(modifier = Modifier.height(12.dp))
-                        Text(
-                            text = buildString {
-                                append(state.selectedBrand?.name ?: "")
-                                state.selectedModel?.let { append(" ${it.name}") }
-                                state.selectedGeneration?.let { append(" ${it.yearStart}") }
-                            },
-                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
-                            color = MaterialTheme.colorScheme.onSurface,
-                            textAlign = TextAlign.Center,
-                        )
-                        state.selectedEngine?.let { engine ->
-                            Text(
-                                text = "${engine.displacementLabel ?: engine.name} · ${engine.powerHp ?: "?"} л.с.",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = TechGidTheme.extendedColors.textTertiary,
-                                textAlign = TextAlign.Center,
-                            )
+                if (state.selectedBrand != null) {
+                    val carDisplayName = remember(
+                        state.selectedBrand,
+                        state.selectedModel,
+                        state.selectedGeneration,
+                        state.selectedEngine,
+                    ) {
+                        buildString {
+                            append(state.selectedBrand?.name ?: "")
+                            state.selectedModel?.let { append(" ${it.name}") }
+                            state.selectedGeneration?.let { append(" ${it.yearStart}") }
+                            state.selectedEngine?.let { e -> e.displacementLabel?.let { append(" · $it") } }
                         }
-                    } else {
+                    }
+                    val mesh = remember(carDisplayName) { buildMeshForCar(carDisplayName) }
+                    val cameraState = remember(carDisplayName) { Car3DCameraState() }
+
+                    Car3DRenderer(
+                        mesh = mesh,
+                        cameraState = cameraState,
+                        modifier = Modifier.fillMaxSize(),
+                        accentColor = MaterialTheme.colorScheme.primary,
+                    )
+
+                    if (state.isComplete) {
+                        Box(
+                            modifier = Modifier
+                                .align(Alignment.BottomCenter)
+                                .padding(12.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.85f))
+                                .padding(horizontal = 16.dp, vertical = 8.dp),
+                        ) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text(
+                                    text = buildString {
+                                        append(state.selectedBrand?.name ?: "")
+                                        state.selectedModel?.let { append(" ${it.name}") }
+                                        state.selectedGeneration?.let { append(" ${it.yearStart}") }
+                                    },
+                                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    textAlign = TextAlign.Center,
+                                )
+                                state.selectedEngine?.let { engine ->
+                                    Text(
+                                        text = "${engine.displacementLabel ?: engine.name} · ${engine.powerHp ?: "?"} л.с.",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = TechGidTheme.extendedColors.textTertiary,
+                                        textAlign = TextAlign.Center,
+                                    )
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(
+                            imageVector = Icons.Filled.DirectionsCar,
+                            contentDescription = null,
+                            modifier = Modifier.size(90.dp),
+                            tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.35f),
+                        )
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
                             text = "3D-модель появится\nпосле выбора авто",

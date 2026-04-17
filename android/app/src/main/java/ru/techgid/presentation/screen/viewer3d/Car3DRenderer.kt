@@ -70,25 +70,27 @@ fun Car3DRenderer(
     options: RenderOptions = RenderOptions(),
     accentColor: Color = Color(0xFF4A9EF5),
     lightDirection: Vec3 = Vec3(-0.4f, 1f, 0.6f),
+    interactive: Boolean = true,
 ) {
     val lightDirN = remember(lightDirection) { lightDirection.normalized() }
 
     Box(
-        modifier = modifier
-            .pointerInput(Unit) {
-                detectDragGestures { change, dragAmount ->
-                    change.consume()
-                    // Сенсимость drag подобрана эмпирически
-                    cameraState.yaw += dragAmount.x * 0.009f
-                    cameraState.pitch = (cameraState.pitch - dragAmount.y * 0.009f)
-                        .coerceIn((-PI / 2 + 0.1).toFloat(), (PI / 2 - 0.1).toFloat())
+        modifier = modifier.let { m ->
+            if (interactive) {
+                m.pointerInput(Unit) {
+                    detectDragGestures { change, dragAmount ->
+                        change.consume()
+                        cameraState.yaw += dragAmount.x * 0.009f
+                        cameraState.pitch = (cameraState.pitch - dragAmount.y * 0.009f)
+                            .coerceIn((-PI / 2 + 0.1).toFloat(), (PI / 2 - 0.1).toFloat())
+                    }
+                }.pointerInput(Unit) {
+                    detectTransformGestures { _, _, zoomChange, _ ->
+                        cameraState.zoom = (cameraState.zoom * zoomChange).coerceIn(0.4f, 2.5f)
+                    }
                 }
-            }
-            .pointerInput(Unit) {
-                detectTransformGestures { _, _, zoomChange, _ ->
-                    cameraState.zoom = (cameraState.zoom * zoomChange).coerceIn(0.4f, 2.5f)
-                }
-            },
+            } else m
+        },
     ) {
         Canvas(modifier = Modifier.fillMaxSize()) {
             val canvasSize = size

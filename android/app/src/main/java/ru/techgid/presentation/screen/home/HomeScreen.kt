@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -42,6 +41,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -52,6 +52,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import ru.techgid.presentation.screen.viewer3d.Car3DCameraState
+import ru.techgid.presentation.screen.viewer3d.Car3DRenderer
+import ru.techgid.presentation.screen.viewer3d.buildMeshForCar
 import ru.techgid.presentation.theme.TechGidColors
 import ru.techgid.presentation.theme.TechGidTheme
 
@@ -143,15 +146,20 @@ fun HomeScreen(
                 Box(
                     modifier = Modifier
                         .size(56.dp)
-                        .clip(CircleShape)
+                        .clip(RoundedCornerShape(14.dp))
                         .background(MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.15f)),
-                    contentAlignment = Alignment.Center,
                 ) {
-                    Icon(
-                        imageVector = Icons.Filled.DirectionsCar,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onPrimary,
-                        modifier = Modifier.size(28.dp),
+                    val mesh = remember(state.carName) { buildMeshForCar(state.carName) }
+                    val cameraState = remember { Car3DCameraState(
+                        initialYaw = (kotlin.math.PI / 5).toFloat(),
+                        initialPitch = (-kotlin.math.PI / 10).toFloat(),
+                    ) }
+                    Car3DRenderer(
+                        mesh = mesh,
+                        cameraState = cameraState,
+                        modifier = Modifier.fillMaxSize(),
+                        accentColor = MaterialTheme.colorScheme.onPrimary,
+                        interactive = false,
                     )
                 }
                 Spacer(Modifier.width(16.dp))
