@@ -33,11 +33,13 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import kotlinx.coroutines.delay
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -209,6 +211,13 @@ fun CarSelectScreen(
                     }
                     val mesh = remember(carDisplayName) { buildMeshForCar(carDisplayName) }
                     val cameraState = remember(carDisplayName) { Car3DCameraState() }
+
+                    LaunchedEffect(carDisplayName) {
+                        while (true) {
+                            delay(16L)
+                            cameraState.yaw += 0.002f
+                        }
+                    }
 
                     Car3DRenderer(
                         mesh = mesh,

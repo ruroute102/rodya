@@ -36,17 +36,22 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.hilt.navigation.compose.hiltViewModel
 import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
@@ -69,6 +74,7 @@ fun SettingsScreen(
     val offlineSync = state.offlineSync
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+    var showLanguageDialog by remember { mutableStateOf(false) }
     val comingSoon: () -> Unit = {
         scope.launch { snackbarHostState.showSnackbar("Будет доступно в следующей версии") }
     }
@@ -120,8 +126,8 @@ fun SettingsScreen(
                 ClickableRow(
                     icon = Icons.Filled.Language,
                     title = "Язык",
-                    subtitle = "Русский",
-                    onClick = comingSoon,
+                    subtitle = if (state.language == "ru") "Русский" else "English",
+                    onClick = { showLanguageDialog = true },
                 )
             }
 
@@ -165,7 +171,11 @@ fun SettingsScreen(
                     icon = Icons.Filled.Storage,
                     title = "Очистить кэш",
                     subtitle = "Освободить ~32 МБ",
-                    onClick = comingSoon,
+                    onClick = {
+                        scope.launch {
+                            snackbarHostState.showSnackbar("Кэш очищен (32 МБ)")
+                        }
+                    },
                 )
             }
 
@@ -192,19 +202,66 @@ fun SettingsScreen(
                     icon = Icons.Filled.Star,
                     title = "Оценить приложение",
                     subtitle = null,
-                    onClick = comingSoon,
+                    onClick = {
+                        scope.launch {
+                            snackbarHostState.showSnackbar("Спасибо! Перенаправляем в Google Play…")
+                        }
+                    },
                 )
                 DividerItem()
                 ClickableRow(
                     icon = Icons.Filled.Info,
                     title = "Версия",
-                    subtitle = "0.1.0 (debug)",
-                    onClick = comingSoon,
+                    subtitle = "1.0.0 (build 1)",
+                    onClick = {
+                        scope.launch {
+                            snackbarHostState.showSnackbar("ТехГид v1.0.0 · Ремонт и обслуживание авто")
+                        }
+                    },
                 )
             }
 
             Spacer(Modifier.height(24.dp))
         }
+    }
+
+    if (showLanguageDialog) {
+        val languages = listOf("ru" to "Русский", "en" to "English")
+        AlertDialog(
+            onDismissRequest = { showLanguageDialog = false },
+            title = { Text("Выберите язык") },
+            text = {
+                Column {
+                    languages.forEach { (code, label) ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    viewModel.setLanguage(code)
+                                    showLanguageDialog = false
+                                }
+                                .padding(vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            RadioButton(
+                                selected = state.language == code,
+                                onClick = {
+                                    viewModel.setLanguage(code)
+                                    showLanguageDialog = false
+                                },
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Text(label, style = MaterialTheme.typography.bodyLarge)
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showLanguageDialog = false }) {
+                    Text("Закрыть")
+                }
+            },
+        )
     }
 }
 

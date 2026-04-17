@@ -52,4 +52,5 @@ class SettingsViewModel @Inject constructor(
     fun toggleNotifications(value: Boolean) = viewModelScope.launch { prefs.setNotifications(value) }
     fun toggleMaintenanceReminders(value: Boolean) = viewModelScope.launch { prefs.setMaintenanceReminders(value) }
     fun toggleOfflineSync(value: Boolean) = viewModelScope.launch { prefs.setOfflineSync(value) }
+    fun setLanguage(code: String) = viewModelScope.launch { prefs.setLanguage(code) }
 }
