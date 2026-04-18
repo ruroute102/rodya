@@ -14,10 +14,15 @@ import javax.inject.Inject
 class Viewer3DViewModel @Inject constructor(
     prefs: AppPrefsRepository,
 ) : ViewModel() {
+
     val carName: StateFlow<String> = prefs.selectedCarName
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), "Audi Q3 2011 · 2.0 TFSI")
 
     val mesh: StateFlow<Mesh> = prefs.selectedCarName
         .map { buildMeshForCar(it) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), buildMeshForCar("Audi Q3 2011 · 2.0 TFSI"))
+
+    val sceneConfig: StateFlow<CarSceneConfig> = prefs.selectedCarName
+        .map { buildSceneConfig(it) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), buildSceneConfig("Audi Q3 2011 · 2.0 TFSI"))
 }

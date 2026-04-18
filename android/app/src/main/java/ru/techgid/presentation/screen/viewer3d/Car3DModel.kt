@@ -54,6 +54,22 @@ object PartId {
     const val GLASS = "glass"
     const val HEADLIGHT = "headlight"
     const val TAILLIGHT = "taillight"
+    const val ENGINE_BLOCK = "engine_block"
+    const val OIL_FILTER = "oil_filter"
+    const val AIR_FILTER = "air_filter"
+    const val TURBO = "turbo"
+    const val INTERCOOLER = "intercooler"
+    const val RADIATOR = "radiator"
+    const val EXHAUST_MANIFOLD = "exhaust_manifold"
+    const val BATTERY = "battery"
+    const val COOLANT_TANK = "coolant_tank"
+    const val TRANSMISSION = "transmission"
+    const val CATALYTIC_CONVERTER = "cat_converter"
+    const val DRIVE_SHAFT = "drive_shaft"
+    const val BRAKE_CALIPER = "brake_caliper"
+    const val OIL_PAN = "oil_pan"
+    const val ALTERNATOR = "alternator"
+    const val STARTER = "starter"
 }
 
 /** Треугольная грань с привязкой к детали и базовым цветом. */
@@ -332,6 +348,40 @@ private fun addCylinder(
     }
 }
 
+private fun addVerticalCylinder(
+    verts: MutableList<Vec3>,
+    faces: MutableList<Face>,
+    center: Vec3,
+    radius: Float,
+    height: Float,
+    segments: Int,
+    partId: String,
+    sideColor: Color,
+    capColor: Color,
+) {
+    val base = verts.size
+    val halfH = height / 2f
+    for (i in 0 until segments) {
+        val a = (i.toFloat() / segments) * (2f * kotlin.math.PI.toFloat())
+        verts += Vec3(center.x + radius * cos(a), center.y - halfH, center.z + radius * sin(a))
+    }
+    for (i in 0 until segments) {
+        val a = (i.toFloat() / segments) * (2f * kotlin.math.PI.toFloat())
+        verts += Vec3(center.x + radius * cos(a), center.y + halfH, center.z + radius * sin(a))
+    }
+    verts += Vec3(center.x, center.y - halfH, center.z)
+    verts += Vec3(center.x, center.y + halfH, center.z)
+    val bc = base + 2 * segments
+    val tc = base + 2 * segments + 1
+    for (i in 0 until segments) {
+        val i2 = (i + 1) % segments
+        faces += Face(base + i, base + i2, base + segments + i2, partId, sideColor)
+        faces += Face(base + i, base + segments + i2, base + segments + i, partId, sideColor)
+        faces += Face(bc, base + i2, base + i, partId, capColor)
+        faces += Face(tc, base + segments + i, base + segments + i2, partId, capColor)
+    }
+}
+
 // Arbitrary 8-point solid. Vertex order (mirrors addBox vertex layout):
 //   p0=FBL  p1=FBR  p2=FTR  p3=FTL   (front / Z+ face)
 //   p4=BBL  p5=BBR  p6=BTR  p7=BTL   (back  / Z- face)
@@ -373,13 +423,13 @@ fun buildAudiQ3Mesh(): Mesh {
     val faces = mutableListOf<Face>()
 
     // ── Palette ──────────────────────────────────────────────────────────
-    val body      = Color(0xFFF2F2F0)  // glacier white metallic
+    val body      = Color(0xFFF2F2F0)
     val bodyDark  = Color(0xFFCCCCCA)
-    val bump      = Color(0xFFE0E0DE)  // bumper plastic
+    val bump      = Color(0xFFE0E0DE)
     val glass     = Color(0xFF1A2535)
-    val pillar    = Color(0xFF1A1A1A)  // black A/B/C-pillars
+    val pillar    = Color(0xFF1A1A1A)
     val tire      = Color(0xFF181818)
-    val hub       = Color(0xFFCECECE)  // silver 18" alloys
+    val hub       = Color(0xFFCECECE)
     val grille    = Color(0xFF0C0C0C)
     val chrome    = Color(0xFFBEBEBE)
     val headL     = Color(0xFFF0F6FF)
@@ -554,6 +604,131 @@ fun buildAudiQ3Mesh(): Mesh {
         addBox(verts, faces, Vec3(sign * 0.73f, roof + 0.035f, roofMidZ),
             Vec3(0.045f, 0.045f, roofLen - 0.30f), PartId.CABIN, roofRail, roofRail)
     }
+
+    // ── INTERNAL COMPONENTS — EA888 Gen 2 (CDNC) 2.0 TFSI ─────────────
+    // Engine is transverse-mounted. Intake side faces front (+Z), exhaust
+    // side faces firewall (-Z).  All positions based on real Q3 8U layout.
+
+    val engineCol   = Color(0xFF708090)
+    val headCol     = Color(0xFF7A8A9A)
+    val oilFiltCol  = Color(0xFFFF9800)
+    val airFiltCol  = Color(0xFF4CAF50)
+    val turboCol    = Color(0xFF00BCD4)
+    val interCol    = Color(0xFFB0BEC5)
+    val radCol      = Color(0xFF2196F3)
+    val exhaustCol  = Color(0xFFE64A19)
+    val battCol     = Color(0xFFFFC107)
+    val coolantCol  = Color(0xFF29B6F6)
+    val transCol    = Color(0xFF546E7A)
+    val catCol      = Color(0xFF8D6E63)
+    val oilPanCol   = Color(0xFF455A64)
+    val altCol      = Color(0xFF78909C)
+    val startCol    = Color(0xFFBF8040)
+    val brakeCol    = Color(0xFFF44336)
+    val shaftCol    = Color(0xFF9E9E9E)
+
+    // 25. Engine block (transverse I4, ~60cm long x ~40cm deep x ~35cm tall)
+    addBox(verts, faces, Vec3(0.05f, 0.42f, 1.15f),
+        Vec3(0.80f, 0.40f, 0.38f), PartId.ENGINE_BLOCK, engineCol, engineCol)
+
+    // 26. Cylinder head + valve cover (sits on top of block)
+    addBox(verts, faces, Vec3(0.05f, 0.68f, 1.15f),
+        Vec3(0.75f, 0.14f, 0.34f), PartId.ENGINE_BLOCK, headCol, headCol)
+
+    // 27. Intake manifold (front-top of head, facing radiator)
+    addBox(verts, faces, Vec3(0.05f, 0.72f, 1.42f),
+        Vec3(0.60f, 0.12f, 0.16f), PartId.ENGINE_BLOCK, Color(0xFF607D8B), Color(0xFF607D8B))
+
+    // 28. Oil filter housing (top-front of engine, slightly right of centre)
+    // EA888 has a cartridge filter in a vertical housing, accessed from above
+    addVerticalCylinder(verts, faces, Vec3(0.28f, 0.72f, 1.34f),
+        0.045f, 0.14f, 10, PartId.OIL_FILTER, oilFiltCol, oilFiltCol)
+
+    // 29. Oil pan (below engine block, extends slightly further back)
+    addBox(verts, faces, Vec3(0.05f, 0.19f, 1.10f),
+        Vec3(0.72f, 0.08f, 0.44f), PartId.OIL_PAN, oilPanCol, oilPanCol)
+
+    // 30. Oil drain plug (small indicator at bottom-rear of oil pan)
+    addBox(verts, faces, Vec3(0.15f, 0.14f, 0.95f),
+        Vec3(0.06f, 0.04f, 0.06f), PartId.OIL_PAN, oilFiltCol, oilFiltCol)
+
+    // 31. Air filter box (passenger side, large rectangular box)
+    addBox(verts, faces, Vec3(0.58f, 0.72f, 1.28f),
+        Vec3(0.36f, 0.20f, 0.32f), PartId.AIR_FILTER, airFiltCol, airFiltCol)
+    // Air intake duct from filter box to turbo
+    addBox(verts, faces, Vec3(0.30f, 0.68f, 1.00f),
+        Vec3(0.20f, 0.10f, 0.12f), PartId.AIR_FILTER, Color(0xFF388E3C), Color(0xFF388E3C))
+
+    // 32. Turbocharger K03 (exhaust side, rear-bottom of engine near firewall)
+    addBox(verts, faces, Vec3(0.08f, 0.38f, 0.82f),
+        Vec3(0.18f, 0.16f, 0.16f), PartId.TURBO, turboCol, turboCol)
+    // Wastegate actuator
+    addBox(verts, faces, Vec3(-0.04f, 0.44f, 0.78f),
+        Vec3(0.06f, 0.08f, 0.06f), PartId.TURBO, Color(0xFF0097A7), Color(0xFF0097A7))
+
+    // 33. Exhaust manifold (integrated with turbo, 4 runners merge into turbo)
+    addBox(verts, faces, Vec3(0.05f, 0.36f, 0.88f),
+        Vec3(0.55f, 0.08f, 0.06f), PartId.EXHAUST_MANIFOLD, exhaustCol, exhaustCol)
+    // Downpipe from turbo
+    addBox(verts, faces, Vec3(0.08f, 0.28f, 0.72f),
+        Vec3(0.10f, 0.12f, 0.10f), PartId.EXHAUST_MANIFOLD, Color(0xFFBF360C), Color(0xFFBF360C))
+
+    // 34. Catalytic converter (below, after turbo/downpipe)
+    addBox(verts, faces, Vec3(0.08f, 0.16f, 0.58f),
+        Vec3(0.14f, 0.10f, 0.28f), PartId.CATALYTIC_CONVERTER, catCol, catCol)
+
+    // 35. Intercooler (front-mounted, wide and thin behind bumper)
+    addBox(verts, faces, Vec3(0.0f, 0.44f, 1.98f),
+        Vec3(1.10f, 0.18f, 0.05f), PartId.INTERCOOLER, interCol, interCol)
+    // Charge pipe from intercooler to intake manifold
+    addBox(verts, faces, Vec3(0.30f, 0.54f, 1.70f),
+        Vec3(0.08f, 0.08f, 0.30f), PartId.INTERCOOLER, Color(0xFF90A4AE), Color(0xFF90A4AE))
+
+    // 36. Radiator (main cooling, behind grille above intercooler)
+    addBox(verts, faces, Vec3(0.0f, 0.62f, 1.96f),
+        Vec3(1.05f, 0.30f, 0.04f), PartId.RADIATOR, radCol, radCol)
+    // Radiator hoses (upper and lower)
+    addBox(verts, faces, Vec3(-0.30f, 0.74f, 1.60f),
+        Vec3(0.06f, 0.06f, 0.40f), PartId.COOLANT_TANK, coolantCol, coolantCol)
+    addBox(verts, faces, Vec3(0.30f, 0.44f, 1.60f),
+        Vec3(0.06f, 0.06f, 0.40f), PartId.COOLANT_TANK, coolantCol, coolantCol)
+
+    // 37. Coolant expansion tank (high, left side of engine bay)
+    addBox(verts, faces, Vec3(-0.52f, 0.80f, 0.92f),
+        Vec3(0.12f, 0.14f, 0.10f), PartId.COOLANT_TANK, coolantCol, coolantCol)
+
+    // 38. Transmission (6-speed DSG, bolted to left side of engine block)
+    addBox(verts, faces, Vec3(-0.48f, 0.38f, 1.15f),
+        Vec3(0.32f, 0.34f, 0.36f), PartId.TRANSMISSION, transCol, transCol)
+
+    // 39. Battery (right-front of engine bay on Q3 8U)
+    addBox(verts, faces, Vec3(-0.58f, 0.62f, 1.40f),
+        Vec3(0.24f, 0.18f, 0.18f), PartId.BATTERY, battCol, battCol)
+    // Battery terminals
+    addBox(verts, faces, Vec3(-0.52f, 0.72f, 1.42f),
+        Vec3(0.06f, 0.02f, 0.04f), PartId.BATTERY, Color(0xFFFF8F00), Color(0xFFFF8F00))
+
+    // 40. Alternator (front-left of engine, belt-driven)
+    addVerticalCylinder(verts, faces, Vec3(-0.30f, 0.40f, 1.38f),
+        0.06f, 0.10f, 8, PartId.ALTERNATOR, altCol, altCol)
+
+    // 41. Starter motor (rear-bottom of engine, near transmission bell housing)
+    addVerticalCylinder(verts, faces, Vec3(-0.32f, 0.28f, 0.96f),
+        0.05f, 0.12f, 8, PartId.STARTER, startCol, startCol)
+
+    // 42. Brake calipers (at each wheel, behind rim)
+    for ((xSign, zPos) in listOf(
+        Pair(-1f, fa), Pair(1f, fa), Pair(-1f, ra), Pair(1f, ra),
+    )) {
+        addBox(verts, faces, Vec3(xSign * (wx - 0.08f), wr + 0.06f, zPos),
+            Vec3(0.08f, 0.14f, 0.12f), PartId.BRAKE_CALIPER, brakeCol, brakeCol)
+    }
+
+    // 43. Front drive shafts (from transmission to front wheels)
+    addBox(verts, faces, Vec3(-0.65f, 0.26f, fa),
+        Vec3(0.40f, 0.04f, 0.04f), PartId.DRIVE_SHAFT, shaftCol, shaftCol)
+    addBox(verts, faces, Vec3(0.55f, 0.26f, fa),
+        Vec3(0.50f, 0.04f, 0.04f), PartId.DRIVE_SHAFT, shaftCol, shaftCol)
 
     // ── 24. Wheels (12 segments for smooth look) ──────────────────────────
     for ((xSign, zPos, pid) in listOf(

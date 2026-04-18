@@ -21,9 +21,6 @@ import androidx.compose.ui.input.pointer.pointerInput
 import kotlin.math.PI
 import kotlin.math.tan
 
-/**
- * Состояние камеры: углы орбиты, зум. Всё изменяется жестами или внешним API.
- */
 class Car3DCameraState(
     initialYaw: Float = (PI / 6).toFloat(),
     initialPitch: Float = (-PI / 9).toFloat(),
@@ -40,37 +37,30 @@ class Car3DCameraState(
         zoom = 1f
         focus = Vec3(0f, 0f, 0f)
     }
+
+    fun applyPreset(preset: CameraPreset) {
+        yaw = preset.yaw
+        pitch = preset.pitch
+        zoom = preset.zoom
+        focus = Vec3(preset.focusX, preset.focusY, preset.focusZ)
+    }
 }
 
-/** Настройки рендера: какие части подсвечены/скрыты. */
 data class RenderOptions(
     val highlightedPartIds: Set<String> = emptySet(),
     val hiddenPartIds: Set<String> = emptySet(),
 )
 
-/**
- * Real-time software 3D-рендер автомобиля в Jetpack Compose.
- *
- * Что делает:
- *  1. Применяет повороты вокруг Y и X ко всем вершинам.
- *  2. Выполняет перспективную проекцию в экранные координаты.
- *  3. Отбрасывает back-face грани.
- *  4. Сортирует грани по средней Z (painter's algorithm).
- *  5. Рисует каждую грань как заполненный треугольник + тонкий контур.
- *  6. Применяет Lambert-затенение по углу к направлению света.
- *  7. Подсвечивает выбранные детали цветом акцента.
- *
- * @param zoomIndicator обновляется внутри, чтобы внешний UI мог показывать проценты.
- */
 @Composable
 fun Car3DRenderer(
     mesh: Mesh,
     cameraState: Car3DCameraState,
     modifier: Modifier = Modifier,
     options: RenderOptions = RenderOptions(),
-    accentColor: Color = Color(0xFF4A9EF5),
+    accentColor: Color = Color(0xFFFF6D00),
     lightDirection: Vec3 = Vec3(-0.4f, 1f, 0.6f),
     interactive: Boolean = true,
+    ghostMode: Boolean = false,
 ) {
     val lightDirN = remember(lightDirection) { lightDirection.normalized() }
 
@@ -96,12 +86,15 @@ fun Car3DRenderer(
             val canvasSize = size
             if (canvasSize.width <= 0f || canvasSize.height <= 0f) return@Canvas
 
-            // 1) Преобразуем все вершины в экранные координаты и мировые Z
+            if (ghostMode) {
+                drawRect(Color(0xFF080C14))
+            }
+
             val yaw = cameraState.yaw
             val pitch = cameraState.pitch
             val focus = cameraState.focus
             val cameraDistance = 8.5f / cameraState.zoom
-            val fov = (PI / 3).toFloat() // 60°
+            val fov = (PI / 3).toFloat()
             val projected = Array(mesh.vertices.size) { i ->
                 val v = mesh.vertices[i] - focus
                 val r = v.rotateY(yaw).rotateX(pitch)
@@ -110,59 +103,37 @@ fun Car3DRenderer(
                 VertexProjected(screen, z, r)
             }
 
-            // 2) Отбор видимых граней + сортировка
             val visibleFaces = mesh.faces.mapNotNull { face ->
                 if (face.partId in options.hiddenPartIds) return@mapNotNull null
                 val va = projected[face.a]
                 val vb = projected[face.b]
                 val vc = projected[face.c]
 
-                // Back-face culling: считаем 2D-нормаль через знак кросс-произведения
                 val ax = vb.screen.x - va.screen.x
                 val ay = vb.screen.y - va.screen.y
                 val bx = vc.screen.x - va.screen.x
                 val by = vc.screen.y - va.screen.y
                 val sign2d = ax * by - ay * bx
-                // Поскольку ось Y экрана вниз, грань «наружу» даёт отрицательный sign2d
-                if (sign2d >= 0f) return@mapNotNull null
 
-                // Клиппинг по Z: грани слишком близко пропускаем
+                val isGhostFace = ghostMode && face.partId in GHOST_EXTERIOR_IDS
+                if (!isGhostFace && sign2d >= 0f) return@mapNotNull null
+
                 val avgZ = (va.z + vb.z + vc.z) / 3f
                 if (avgZ < 0.5f) return@mapNotNull null
 
-                // 3D-нормаль (в view space) для освещения
                 val edge1 = vb.view - va.view
                 val edge2 = vc.view - va.view
                 val normal = edge1.cross(edge2).normalized()
 
-                FaceDraw(
-                    face = face,
-                    a = va.screen,
-                    b = vb.screen,
-                    c = vc.screen,
-                    avgZ = avgZ,
-                    normal = normal,
-                )
-            }.sortedByDescending { it.avgZ } // дальние сперва
+                FaceDraw(face, va.screen, vb.screen, vc.screen, avgZ, normal)
+            }.sortedByDescending { it.avgZ }
 
-            // 3) Рисуем
             visibleFaces.forEach { f ->
                 val isHighlighted = f.face.partId in options.highlightedPartIds
-                val base = if (isHighlighted) {
-                    blend(f.face.baseColor, accentColor, 0.55f)
-                } else {
-                    f.face.baseColor
-                }
+                val isGhostFace = ghostMode && f.face.partId in GHOST_EXTERIOR_IDS
+                val isSemiGhost = ghostMode && f.face.partId in SEMI_GHOST_IDS
 
-                // Lambert-затенение
                 val lambert = (f.normal.dot(lightDirN)).coerceIn(0f, 1f)
-                val shade = 0.35f + 0.65f * lambert
-                val shaded = Color(
-                    red = (base.red * shade).coerceIn(0f, 1f),
-                    green = (base.green * shade).coerceIn(0f, 1f),
-                    blue = (base.blue * shade).coerceIn(0f, 1f),
-                    alpha = base.alpha,
-                )
 
                 val path = Path().apply {
                     moveTo(f.a.x, f.a.y)
@@ -170,21 +141,85 @@ fun Car3DRenderer(
                     lineTo(f.c.x, f.c.y)
                     close()
                 }
-                drawPath(path, color = shaded)
-                // Тонкий контур — делает low-poly приятнее на глаз
-                drawPath(
-                    path = path,
-                    color = if (isHighlighted) accentColor else Color(0x33000000),
-                    style = Stroke(width = if (isHighlighted) 2f else 0.8f),
-                )
+
+                when {
+                    isGhostFace -> {
+                        val ghostAlpha = if (isHighlighted) 0.18f else 0.10f
+                        val shade = 0.5f + 0.5f * lambert
+                        val base = f.face.baseColor
+                        val fill = Color(
+                            red = (base.red * shade).coerceIn(0f, 1f),
+                            green = (base.green * shade).coerceIn(0f, 1f),
+                            blue = (base.blue * shade).coerceIn(0f, 1f),
+                            alpha = ghostAlpha,
+                        )
+                        drawPath(path, color = fill)
+                        val wireColor = if (isHighlighted)
+                            accentColor.copy(alpha = 0.3f)
+                        else
+                            Color(0x2800C8FF)
+                        drawPath(path, color = wireColor, style = Stroke(width = 0.6f))
+                    }
+
+                    isSemiGhost -> {
+                        val semiAlpha = 0.30f
+                        val shade = 0.35f + 0.65f * lambert
+                        val base = f.face.baseColor
+                        val fill = Color(
+                            red = (base.red * shade).coerceIn(0f, 1f),
+                            green = (base.green * shade).coerceIn(0f, 1f),
+                            blue = (base.blue * shade).coerceIn(0f, 1f),
+                            alpha = semiAlpha,
+                        )
+                        drawPath(path, color = fill)
+                        drawPath(path, color = Color(0x1800C8FF), style = Stroke(width = 0.5f))
+                    }
+
+                    else -> {
+                        val base = if (isHighlighted)
+                            blend(f.face.baseColor, accentColor, 0.55f)
+                        else
+                            f.face.baseColor
+                        val shade = 0.35f + 0.65f * lambert
+                        val shaded = Color(
+                            red = (base.red * shade).coerceIn(0f, 1f),
+                            green = (base.green * shade).coerceIn(0f, 1f),
+                            blue = (base.blue * shade).coerceIn(0f, 1f),
+                            alpha = base.alpha,
+                        )
+                        drawPath(path, color = shaded)
+
+                        if (isHighlighted) {
+                            drawPath(path, color = accentColor.copy(alpha = 0.10f),
+                                style = Stroke(width = 20f))
+                            drawPath(path, color = accentColor.copy(alpha = 0.18f),
+                                style = Stroke(width = 12f))
+                            drawPath(path, color = accentColor.copy(alpha = 0.40f),
+                                style = Stroke(width = 5f))
+                            drawPath(path, color = accentColor,
+                                style = Stroke(width = 1.5f))
+                        } else if (ghostMode) {
+                            drawPath(path, color = Color(0x20A0B8D0),
+                                style = Stroke(width = 0.5f))
+                        } else {
+                            drawPath(path, color = Color(0x33000000),
+                                style = Stroke(width = 0.8f))
+                        }
+                    }
+                }
             }
         }
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Внутренние типы и утилиты
-// ─────────────────────────────────────────────────────────────────────────────
+private val GHOST_EXTERIOR_IDS = setOf(
+    PartId.BODY, PartId.CABIN, PartId.HOOD, PartId.TRUNK,
+    PartId.GLASS, PartId.HEADLIGHT, PartId.TAILLIGHT,
+)
+
+private val SEMI_GHOST_IDS = setOf(
+    PartId.WHEEL_FL, PartId.WHEEL_FR, PartId.WHEEL_RL, PartId.WHEEL_RR,
+)
 
 private data class VertexProjected(
     val screen: Offset,
@@ -201,7 +236,6 @@ private data class FaceDraw(
     val normal: Vec3,
 )
 
-/** Перспективная проекция view-space точки в экранные координаты. */
 private fun perspectiveProject(
     view: Vec3,
     cameraDistance: Float,
@@ -219,7 +253,6 @@ private fun perspectiveProject(
     return Offset(sx, sy)
 }
 
-/** Линейная интерполяция между двумя цветами. */
 private fun blend(a: Color, b: Color, t: Float): Color {
     val it = 1f - t
     return Color(
@@ -230,7 +263,6 @@ private fun blend(a: Color, b: Color, t: Float): Color {
     )
 }
 
-/** Плавно направить камеру на заданную точку в модельном пространстве. */
 fun Car3DCameraState.focusOn(target: Vec3) {
     focus = target
 }
