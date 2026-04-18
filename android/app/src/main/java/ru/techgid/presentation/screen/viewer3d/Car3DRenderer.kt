@@ -14,11 +14,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import kotlin.math.PI
+import kotlin.math.abs
 import kotlin.math.tan
 
 class Car3DCameraState(
@@ -87,7 +89,15 @@ fun Car3DRenderer(
             if (canvasSize.width <= 0f || canvasSize.height <= 0f) return@Canvas
 
             if (ghostMode) {
-                drawRect(Color(0xFF080C14))
+                val bgCenter = Offset(canvasSize.width / 2f, canvasSize.height / 2f)
+                val bgRadius = maxOf(canvasSize.width, canvasSize.height) * 0.85f
+                drawRect(
+                    brush = Brush.radialGradient(
+                        colors = listOf(Color(0xFF0E1525), Color(0xFF050A10)),
+                        center = bgCenter,
+                        radius = bgRadius,
+                    ),
+                )
             }
 
             val yaw = cameraState.yaw
@@ -134,6 +144,7 @@ fun Car3DRenderer(
                 val isSemiGhost = ghostMode && f.face.partId in SEMI_GHOST_IDS
 
                 val lambert = (f.normal.dot(lightDirN)).coerceIn(0f, 1f)
+                val fresnel = (1f - abs(f.normal.z)).coerceIn(0f, 1f).let { it * it }
 
                 val path = Path().apply {
                     moveTo(f.a.x, f.a.y)
@@ -144,25 +155,28 @@ fun Car3DRenderer(
 
                 when {
                     isGhostFace -> {
-                        val ghostAlpha = if (isHighlighted) 0.18f else 0.10f
+                        val fillAlpha = if (isHighlighted) 0.14f
+                            else 0.03f + fresnel * 0.07f
                         val shade = 0.5f + 0.5f * lambert
                         val base = f.face.baseColor
                         val fill = Color(
-                            red = (base.red * shade).coerceIn(0f, 1f),
-                            green = (base.green * shade).coerceIn(0f, 1f),
-                            blue = (base.blue * shade).coerceIn(0f, 1f),
-                            alpha = ghostAlpha,
+                            red = (base.red * shade * 0.55f + 0.18f).coerceIn(0f, 1f),
+                            green = (base.green * shade * 0.55f + 0.22f).coerceIn(0f, 1f),
+                            blue = (base.blue * shade * 0.55f + 0.38f).coerceIn(0f, 1f),
+                            alpha = fillAlpha,
                         )
                         drawPath(path, color = fill)
+                        val wireAlpha = 0.04f + fresnel * 0.30f
+                        val wireWidth = 0.3f + fresnel * 0.9f
                         val wireColor = if (isHighlighted)
-                            accentColor.copy(alpha = 0.3f)
+                            accentColor.copy(alpha = (wireAlpha * 1.5f).coerceAtMost(1f))
                         else
-                            Color(0x2800C8FF)
-                        drawPath(path, color = wireColor, style = Stroke(width = 0.6f))
+                            Color(0.55f, 0.78f, 1.0f, wireAlpha)
+                        drawPath(path, color = wireColor, style = Stroke(width = wireWidth))
                     }
 
                     isSemiGhost -> {
-                        val semiAlpha = 0.30f
+                        val semiAlpha = 0.18f + fresnel * 0.12f
                         val shade = 0.35f + 0.65f * lambert
                         val base = f.face.baseColor
                         val fill = Color(
@@ -172,7 +186,9 @@ fun Car3DRenderer(
                             alpha = semiAlpha,
                         )
                         drawPath(path, color = fill)
-                        drawPath(path, color = Color(0x1800C8FF), style = Stroke(width = 0.5f))
+                        val wireAlpha = 0.05f + fresnel * 0.14f
+                        drawPath(path, color = Color(0.5f, 0.7f, 0.9f, wireAlpha),
+                            style = Stroke(width = 0.4f))
                     }
 
                     else -> {
@@ -180,7 +196,9 @@ fun Car3DRenderer(
                             blend(f.face.baseColor, accentColor, 0.55f)
                         else
                             f.face.baseColor
-                        val shade = 0.35f + 0.65f * lambert
+
+                        val rimBoost = if (ghostMode) fresnel * 0.18f else 0f
+                        val shade = (0.35f + 0.65f * lambert + rimBoost).coerceAtMost(1f)
                         val shaded = Color(
                             red = (base.red * shade).coerceIn(0f, 1f),
                             green = (base.green * shade).coerceIn(0f, 1f),
@@ -190,17 +208,21 @@ fun Car3DRenderer(
                         drawPath(path, color = shaded)
 
                         if (isHighlighted) {
-                            drawPath(path, color = accentColor.copy(alpha = 0.10f),
-                                style = Stroke(width = 20f))
-                            drawPath(path, color = accentColor.copy(alpha = 0.18f),
-                                style = Stroke(width = 12f))
-                            drawPath(path, color = accentColor.copy(alpha = 0.40f),
-                                style = Stroke(width = 5f))
+                            drawPath(path, color = Color(1f, 0.42f, 0f, 0.04f),
+                                style = Stroke(width = 34f))
+                            drawPath(path, color = Color(1f, 0.45f, 0f, 0.07f),
+                                style = Stroke(width = 24f))
+                            drawPath(path, color = Color(1f, 0.48f, 0f, 0.12f),
+                                style = Stroke(width = 16f))
+                            drawPath(path, color = Color(1f, 0.52f, 0f, 0.20f),
+                                style = Stroke(width = 9f))
+                            drawPath(path, color = accentColor.copy(alpha = 0.42f),
+                                style = Stroke(width = 4f))
                             drawPath(path, color = accentColor,
-                                style = Stroke(width = 1.5f))
+                                style = Stroke(width = 1.2f))
                         } else if (ghostMode) {
-                            drawPath(path, color = Color(0x20A0B8D0),
-                                style = Stroke(width = 0.5f))
+                            drawPath(path, color = Color(0x15A0B8D0),
+                                style = Stroke(width = 0.4f))
                         } else {
                             drawPath(path, color = Color(0x33000000),
                                 style = Stroke(width = 0.8f))
