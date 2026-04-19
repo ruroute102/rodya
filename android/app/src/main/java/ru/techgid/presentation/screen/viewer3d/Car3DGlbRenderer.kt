@@ -1,12 +1,27 @@
 package ru.techgid.presentation.screen.viewer3d
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
 import io.github.sceneview.Scene
 import io.github.sceneview.math.Position
 import io.github.sceneview.node.ModelNode
@@ -17,13 +32,6 @@ import io.github.sceneview.rememberMaterialLoader
 import io.github.sceneview.rememberModelLoader
 import io.github.sceneview.rememberNodes
 
-/**
- * Hardware-accelerated PBR renderer via Google Filament (SceneView wrapper).
- * Loads a .glb file from assets/ at [modelAssetPath].
- *
- * For loading rules and how to obtain .glb files, see
- * app/src/main/assets/models/MODELS.md.
- */
 @Composable
 fun Car3DGlbRenderer(
     modelAssetPath: String,
@@ -40,8 +48,11 @@ fun Car3DGlbRenderer(
         lookAt(Position(0f, 0f, 0f))
     }
 
+    var modelLoaded by remember { mutableStateOf(false) }
+    var modelError by remember { mutableStateOf(false) }
+
     val childNodes = rememberNodes {
-        runCatching {
+        val result = runCatching {
             val instance = modelLoader.createModelInstance(assetFileLocation = modelAssetPath)
             val node = ModelNode(
                 modelInstance = instance,
@@ -52,6 +63,8 @@ fun Car3DGlbRenderer(
             }
             add(node)
         }
+        modelLoaded = result.isSuccess
+        modelError = result.isFailure
     }
 
     Box(
@@ -67,5 +80,33 @@ fun Car3DGlbRenderer(
             childNodes = childNodes,
             isOpaque = false,
         )
+
+        AnimatedVisibility(
+            visible = !modelLoaded && !modelError,
+            enter = fadeIn(),
+            exit = fadeOut(),
+        ) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(40.dp),
+                    color = Color(0xFF4A90D9),
+                    strokeWidth = 3.dp,
+                )
+                Spacer(Modifier.height(12.dp))
+                Text(
+                    text = "Загрузка модели…",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color(0xFF8899AA),
+                )
+            }
+        }
+
+        if (modelError) {
+            Text(
+                text = "Не удалось загрузить модель",
+                style = MaterialTheme.typography.bodySmall,
+                color = Color(0xFFFF6B6B),
+            )
+        }
     }
 }

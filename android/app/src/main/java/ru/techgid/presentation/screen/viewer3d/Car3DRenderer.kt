@@ -1,24 +1,36 @@
 package ru.techgid.presentation.screen.viewer3d
 
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameMillis
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
+import kotlinx.coroutines.isActive
 import kotlin.math.PI
 import kotlin.math.abs
+import kotlin.math.sin
 import kotlin.math.tan
 
 class Car3DCameraState(
@@ -68,11 +80,46 @@ fun Car3DRenderer(
         Vec3(lightDirN.x + viewDirN.x, lightDirN.y + viewDirN.y, lightDirN.z + viewDirN.z).normalized()
     }
 
+    var lastTouchMs by remember { mutableLongStateOf(System.currentTimeMillis()) }
+
+    LaunchedEffect(interactive) {
+        if (!interactive) return@LaunchedEffect
+        while (isActive) {
+            withFrameMillis {
+                val now = System.currentTimeMillis()
+                if (now - lastTouchMs > 2500L) {
+                    cameraState.yaw += 0.003f
+                }
+            }
+        }
+    }
+
+    val shimmerTransition = rememberInfiniteTransition(label = "ghost_shimmer")
+    val shimmerPhase by shimmerTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = (2 * PI).toFloat(),
+        animationSpec = infiniteRepeatable(
+            animation = tween(5000, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart,
+        ),
+        label = "shimmer_phase",
+    )
+    val scanPhase by shimmerTransition.animateFloat(
+        initialValue = -0.2f,
+        targetValue = 1.2f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(3500, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse,
+        ),
+        label = "scan_phase",
+    )
+
     Box(
         modifier = modifier.let { m ->
             if (interactive) {
                 m.pointerInput(Unit) {
                     detectTransformGestures { _, pan, zoomChange, _ ->
+                        lastTouchMs = System.currentTimeMillis()
                         cameraState.yaw += pan.x * 0.009f
                         cameraState.pitch = (cameraState.pitch - pan.y * 0.009f)
                             .coerceIn((-PI / 2 + 0.1).toFloat(), (PI / 2 - 0.1).toFloat())
@@ -177,31 +224,37 @@ fun Car3DRenderer(
 
                 when {
                     isGhostFace -> {
+                        val shimmerMod = 1f + sin(shimmerPhase) * 0.12f
+                        val faceCenterY = (f.a.y + f.b.y + f.c.y) / 3f
+                        val normalizedY = faceCenterY / canvasSize.height
+                        val scanDist = abs(normalizedY - scanPhase)
+                        val scanBoost = (1f - (scanDist * 6f).coerceAtMost(1f)).coerceAtLeast(0f)
+
                         val fillAlpha = if (isHighlighted) 0.34f
-                            else 0.14f + fresnel * 0.12f
+                            else (0.14f + fresnel * 0.12f + scanBoost * 0.10f) * shimmerMod
                         val ambR = ghostGrdR * (1f - hemi) + ghostSkyR * hemi
                         val ambG = ghostGrdG * (1f - hemi) + ghostSkyG * hemi
                         val ambB = ghostGrdB * (1f - hemi) + ghostSkyB * hemi
                         val base = f.face.baseColor
                         val rim = fresnel * fresnel * 0.75f
-                        val litR = base.red * (0.32f + 0.50f * diffuse) + ambR * 0.28f + spec32 * 0.45f + rim * 0.55f
-                        val litG = base.green * (0.32f + 0.50f * diffuse) + ambG * 0.30f + spec32 * 0.55f + rim * 0.78f
-                        val litB = base.blue * (0.32f + 0.50f * diffuse) + ambB * 0.34f + spec32 * 0.70f + rim * 1.05f
+                        val litR = base.red * (0.32f + 0.50f * diffuse) + ambR * 0.28f + spec32 * 0.45f + rim * 0.55f + scanBoost * 0.18f
+                        val litG = base.green * (0.32f + 0.50f * diffuse) + ambG * 0.30f + spec32 * 0.55f + rim * 0.78f + scanBoost * 0.28f
+                        val litB = base.blue * (0.32f + 0.50f * diffuse) + ambB * 0.34f + spec32 * 0.70f + rim * 1.05f + scanBoost * 0.40f
                         drawPath(
                             path,
                             color = Color(
                                 red = litR.coerceIn(0f, 1f),
                                 green = litG.coerceIn(0f, 1f),
                                 blue = litB.coerceIn(0f, 1f),
-                                alpha = fillAlpha,
+                                alpha = fillAlpha.coerceIn(0f, 1f),
                             ),
                         )
-                        val wireAlpha = 0.02f + fresnel * 0.12f
-                        val wireWidth = 0.2f + fresnel * 0.7f
+                        val wireAlpha = (0.02f + fresnel * 0.12f + scanBoost * 0.15f) * shimmerMod
+                        val wireWidth = 0.2f + fresnel * 0.7f + scanBoost * 0.5f
                         val wireColor = if (isHighlighted)
                             accentColor.copy(alpha = (wireAlpha * 2.4f).coerceAtMost(1f))
                         else
-                            Color(0.60f, 0.78f, 1.0f, wireAlpha)
+                            Color(0.60f, 0.78f, 1.0f, wireAlpha.coerceIn(0f, 1f))
                         drawPath(path, color = wireColor, style = Stroke(width = wireWidth))
                     }
 
@@ -274,6 +327,28 @@ fun Car3DRenderer(
                             drawPath(path, color = Color(0x33000000),
                                 style = Stroke(width = 0.8f))
                         }
+                    }
+                }
+            }
+
+            if (ghostMode) {
+                val scanY = scanPhase * canvasSize.height
+                for (i in 0..4) {
+                    val spread = i * 3f
+                    val lineAlpha = (0.25f - i * 0.05f).coerceAtLeast(0f)
+                    drawLine(
+                        color = Color(0.45f, 0.70f, 1.0f, lineAlpha),
+                        start = Offset(0f, scanY - spread),
+                        end = Offset(canvasSize.width, scanY - spread),
+                        strokeWidth = if (i == 0) 1.5f else 0.8f,
+                    )
+                    if (i > 0) {
+                        drawLine(
+                            color = Color(0.45f, 0.70f, 1.0f, lineAlpha),
+                            start = Offset(0f, scanY + spread),
+                            end = Offset(canvasSize.width, scanY + spread),
+                            strokeWidth = 0.8f,
+                        )
                     }
                 }
             }
