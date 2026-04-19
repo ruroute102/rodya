@@ -432,6 +432,30 @@ private fun bodyProfile(
     )
 }
 
+private fun lerpProfiles(a: List<Vec3>, b: List<Vec3>, t: Float): List<Vec3> {
+    val inv = 1f - t
+    return a.mapIndexed { i, va ->
+        val vb = b[i]
+        Vec3(va.x * inv + vb.x * t, va.y * inv + vb.y * t, va.z * inv + vb.z * t)
+    }
+}
+
+private fun densifyProfiles(profiles: List<List<Vec3>>, perGap: Int): List<List<Vec3>> {
+    if (perGap <= 0) return profiles
+    val result = mutableListOf<List<Vec3>>()
+    for (i in 0 until profiles.size - 1) {
+        result.add(profiles[i])
+        val step = 1f / (perGap + 1).toFloat()
+        for (k in 1..perGap) {
+            val t = k * step
+            val eased = t * t * (3f - 2f * t)
+            result.add(lerpProfiles(profiles[i], profiles[i + 1], eased))
+        }
+    }
+    result.add(profiles.last())
+    return result
+}
+
 private fun addLoftedBody(
     verts: MutableList<Vec3>,
     faces: MutableList<Face>,
@@ -529,9 +553,10 @@ fun buildAudiQ3Mesh(): Mesh {
         bodyProfile(-2.05f,0.22f,0.86f, 0.90f,0.40f, 0.90f, 0.85f,0.88f, 1.05f,0.82f, 1.28f,0.76f, 1.38f),
         bodyProfile(-2.20f,0.22f,0.83f, 0.86f,0.38f, 0.86f, 0.78f,0.84f, 0.82f,0.76f, 0.84f,0.50f, 0.86f),
     )
-    addLoftedBody(verts, faces, profiles, 0, 4, PartId.HOOD, body, bodyDark, capFront = true)
-    addLoftedBody(verts, faces, profiles, 4, 9, PartId.BODY, body, bodyDark)
-    addLoftedBody(verts, faces, profiles, 9, 11, PartId.TRUNK, body, bodyDark, capBack = true)
+    val dense = densifyProfiles(profiles, 1)
+    addLoftedBody(verts, faces, dense, 0, 8, PartId.HOOD, body, bodyDark, capFront = true)
+    addLoftedBody(verts, faces, dense, 8, 18, PartId.BODY, body, bodyDark)
+    addLoftedBody(verts, faces, dense, 18, 22, PartId.TRUNK, body, bodyDark, capBack = true)
 
     // ── 2. Grille ───────────────────────────────────────────────────────
     addBox(verts, faces, Vec3(0f, 0.50f, 2.22f),
@@ -730,12 +755,12 @@ fun buildAudiQ3Mesh(): Mesh {
     addBox(verts, faces, Vec3(0.55f, 0.26f, fa),
         Vec3(0.50f, 0.04f, 0.04f), PartId.DRIVE_SHAFT, shaftCol, shaftCol)
 
-    // ── 12. Wheels (16 segments for smooth look) ──────────────────────────
+    // ── 12. Wheels (20 segments for smooth look) ──────────────────────────
     for ((xSign, zPos, pid) in listOf(
         Triple(-1f, fa, PartId.WHEEL_FL), Triple(1f, fa, PartId.WHEEL_FR),
         Triple(-1f, ra, PartId.WHEEL_RL), Triple(1f, ra, PartId.WHEEL_RR),
     )) {
-        addCylinder(verts, faces, Vec3(xSign * wx, wr, zPos), wr, ww, 16, pid, tire, hub)
+        addCylinder(verts, faces, Vec3(xSign * wx, wr, zPos), wr, ww, 20, pid, tire, hub)
     }
 
     return Mesh(verts, faces)
