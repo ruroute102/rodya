@@ -63,6 +63,10 @@ fun Car3DRenderer(
     ghostMode: Boolean = false,
 ) {
     val lightDirN = remember(lightDirection) { lightDirection.normalized() }
+    val viewDirN = remember { Vec3(0f, 0f, -1f) }
+    val halfDirN = remember(lightDirN) {
+        Vec3(lightDirN.x + viewDirN.x, lightDirN.y + viewDirN.y, lightDirN.z + viewDirN.z).normalized()
+    }
 
     Box(
         modifier = modifier.let { m ->
@@ -140,12 +144,28 @@ fun Car3DRenderer(
                 FaceDraw(face, va.screen, vb.screen, vc.screen, avgZ, normal)
             }.sortedByDescending { it.avgZ }
 
+            val skyR = 0.62f; val skyG = 0.72f; val skyB = 0.88f
+            val grdR = 0.28f; val grdG = 0.24f; val grdB = 0.20f
+            val ghostSkyR = 0.35f; val ghostSkyG = 0.50f; val ghostSkyB = 0.72f
+            val ghostGrdR = 0.08f; val ghostGrdG = 0.10f; val ghostGrdB = 0.16f
+
             visibleFaces.forEach { f ->
                 val isHighlighted = f.face.partId in options.highlightedPartIds
                 val isGhostFace = ghostMode && f.face.partId in GHOST_EXTERIOR_IDS
                 val isSemiGhost = ghostMode && f.face.partId in SEMI_GHOST_IDS
 
-                val lambert = (f.normal.dot(lightDirN)).coerceIn(0f, 1f)
+                val nDotL = f.normal.dot(lightDirN)
+                val halfLam = (nDotL * 0.5f + 0.5f)
+                val diffuse = halfLam * halfLam
+
+                val nDotH = f.normal.dot(halfDirN).coerceAtLeast(0f)
+                val h2 = nDotH * nDotH
+                val h4 = h2 * h2
+                val h8 = h4 * h4
+                val h16 = h8 * h8
+                val spec32 = h16 * h16
+
+                val hemi = f.normal.y * 0.5f + 0.5f
                 val fresnel = (1f - abs(f.normal.z)).coerceIn(0f, 1f).let { it * it }
 
                 val path = Path().apply {
@@ -157,37 +177,48 @@ fun Car3DRenderer(
 
                 when {
                     isGhostFace -> {
-                        val fillAlpha = if (isHighlighted) 0.28f
-                            else 0.12f + fresnel * 0.08f
-                        val shade = 0.45f + 0.55f * lambert
+                        val fillAlpha = if (isHighlighted) 0.32f
+                            else 0.14f + fresnel * 0.10f
+                        val ambR = ghostGrdR * (1f - hemi) + ghostSkyR * hemi
+                        val ambG = ghostGrdG * (1f - hemi) + ghostSkyG * hemi
+                        val ambB = ghostGrdB * (1f - hemi) + ghostSkyB * hemi
                         val base = f.face.baseColor
-                        val fill = Color(
-                            red = (base.red * shade * 0.72f + 0.08f).coerceIn(0f, 1f),
-                            green = (base.green * shade * 0.72f + 0.12f).coerceIn(0f, 1f),
-                            blue = (base.blue * shade * 0.72f + 0.20f).coerceIn(0f, 1f),
-                            alpha = fillAlpha,
+                        val litR = base.red * (0.35f + 0.55f * diffuse) + ambR * 0.30f + spec32 * 0.45f
+                        val litG = base.green * (0.35f + 0.55f * diffuse) + ambG * 0.30f + spec32 * 0.50f
+                        val litB = base.blue * (0.35f + 0.55f * diffuse) + ambB * 0.35f + spec32 * 0.60f
+                        drawPath(
+                            path,
+                            color = Color(
+                                red = litR.coerceIn(0f, 1f),
+                                green = litG.coerceIn(0f, 1f),
+                                blue = litB.coerceIn(0f, 1f),
+                                alpha = fillAlpha,
+                            ),
                         )
-                        drawPath(path, color = fill)
-                        val wireAlpha = 0.02f + fresnel * 0.08f
-                        val wireWidth = 0.2f + fresnel * 0.5f
+                        val wireAlpha = 0.02f + fresnel * 0.09f
+                        val wireWidth = 0.2f + fresnel * 0.6f
                         val wireColor = if (isHighlighted)
-                            accentColor.copy(alpha = (wireAlpha * 2f).coerceAtMost(1f))
+                            accentColor.copy(alpha = (wireAlpha * 2.2f).coerceAtMost(1f))
                         else
-                            Color(0.45f, 0.62f, 0.85f, wireAlpha)
+                            Color(0.50f, 0.68f, 0.90f, wireAlpha)
                         drawPath(path, color = wireColor, style = Stroke(width = wireWidth))
                     }
 
                     isSemiGhost -> {
-                        val semiAlpha = 0.25f + fresnel * 0.10f
-                        val shade = 0.35f + 0.65f * lambert
+                        val semiAlpha = 0.28f + fresnel * 0.12f
+                        val ambR = ghostGrdR * (1f - hemi) + ghostSkyR * hemi
+                        val ambG = ghostGrdG * (1f - hemi) + ghostSkyG * hemi
+                        val ambB = ghostGrdB * (1f - hemi) + ghostSkyB * hemi
                         val base = f.face.baseColor
-                        val fill = Color(
-                            red = (base.red * shade).coerceIn(0f, 1f),
-                            green = (base.green * shade).coerceIn(0f, 1f),
-                            blue = (base.blue * shade).coerceIn(0f, 1f),
-                            alpha = semiAlpha,
+                        drawPath(
+                            path,
+                            color = Color(
+                                red = (base.red * (0.30f + 0.65f * diffuse) + ambR * 0.15f + spec32 * 0.25f).coerceIn(0f, 1f),
+                                green = (base.green * (0.30f + 0.65f * diffuse) + ambG * 0.15f + spec32 * 0.25f).coerceIn(0f, 1f),
+                                blue = (base.blue * (0.30f + 0.65f * diffuse) + ambB * 0.18f + spec32 * 0.28f).coerceIn(0f, 1f),
+                                alpha = semiAlpha,
+                            ),
                         )
-                        drawPath(path, color = fill)
                         val wireAlpha = 0.03f + fresnel * 0.08f
                         drawPath(path, color = Color(0.4f, 0.55f, 0.75f, wireAlpha),
                             style = Stroke(width = 0.3f))
@@ -199,29 +230,42 @@ fun Car3DRenderer(
                         else
                             f.face.baseColor
 
-                        val rimBoost = if (ghostMode) fresnel * 0.18f else 0f
-                        val shade = (0.35f + 0.65f * lambert + rimBoost).coerceAtMost(1f)
-                        val shaded = Color(
-                            red = (base.red * shade).coerceIn(0f, 1f),
-                            green = (base.green * shade).coerceIn(0f, 1f),
-                            blue = (base.blue * shade).coerceIn(0f, 1f),
-                            alpha = base.alpha,
+                        val ambR = if (ghostMode) ghostGrdR * (1f - hemi) + ghostSkyR * hemi
+                            else grdR * (1f - hemi) + skyR * hemi
+                        val ambG = if (ghostMode) ghostGrdG * (1f - hemi) + ghostSkyG * hemi
+                            else grdG * (1f - hemi) + skyG * hemi
+                        val ambB = if (ghostMode) ghostGrdB * (1f - hemi) + ghostSkyB * hemi
+                            else grdB * (1f - hemi) + skyB * hemi
+
+                        val rimBoost = if (ghostMode) fresnel * 0.20f else 0f
+                        val specStrength = if (isHighlighted) 0.80f else 0.55f
+                        val litR = base.red * (0.32f + 0.60f * diffuse + rimBoost) + ambR * 0.18f + spec32 * specStrength
+                        val litG = base.green * (0.32f + 0.60f * diffuse + rimBoost) + ambG * 0.18f + spec32 * specStrength
+                        val litB = base.blue * (0.32f + 0.60f * diffuse + rimBoost) + ambB * 0.20f + spec32 * specStrength
+
+                        drawPath(
+                            path,
+                            color = Color(
+                                red = litR.coerceIn(0f, 1f),
+                                green = litG.coerceIn(0f, 1f),
+                                blue = litB.coerceIn(0f, 1f),
+                                alpha = base.alpha,
+                            ),
                         )
-                        drawPath(path, color = shaded)
 
                         if (isHighlighted) {
                             drawPath(path, color = Color(1f, 0.42f, 0f, 0.04f),
-                                style = Stroke(width = 34f))
-                            drawPath(path, color = Color(1f, 0.45f, 0f, 0.07f),
-                                style = Stroke(width = 24f))
-                            drawPath(path, color = Color(1f, 0.48f, 0f, 0.12f),
-                                style = Stroke(width = 16f))
-                            drawPath(path, color = Color(1f, 0.52f, 0f, 0.20f),
-                                style = Stroke(width = 9f))
-                            drawPath(path, color = accentColor.copy(alpha = 0.42f),
-                                style = Stroke(width = 4f))
+                                style = Stroke(width = 38f))
+                            drawPath(path, color = Color(1f, 0.45f, 0f, 0.08f),
+                                style = Stroke(width = 26f))
+                            drawPath(path, color = Color(1f, 0.48f, 0f, 0.14f),
+                                style = Stroke(width = 17f))
+                            drawPath(path, color = Color(1f, 0.52f, 0f, 0.22f),
+                                style = Stroke(width = 10f))
+                            drawPath(path, color = accentColor.copy(alpha = 0.46f),
+                                style = Stroke(width = 4.5f))
                             drawPath(path, color = accentColor,
-                                style = Stroke(width = 1.2f))
+                                style = Stroke(width = 1.3f))
                         } else if (ghostMode) {
                             drawPath(path, color = Color(0x15A0B8D0),
                                 style = Stroke(width = 0.4f))
