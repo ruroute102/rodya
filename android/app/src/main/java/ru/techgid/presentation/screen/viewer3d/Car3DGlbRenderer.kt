@@ -4,15 +4,11 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import com.google.android.filament.Engine
-import dev.romainguy.kotlin.math.Float3
 import io.github.sceneview.Scene
 import io.github.sceneview.math.Position
-import io.github.sceneview.node.CameraNode
 import io.github.sceneview.node.ModelNode
 import io.github.sceneview.rememberCameraNode
 import io.github.sceneview.rememberEngine
@@ -69,11 +65,6 @@ fun Car3DGlbRenderer(
             materialLoader = materialLoader,
             cameraNode = cameraNode,
             childNodes = childNodes,
-            environment = remember(environmentLoader) {
-                environmentLoader.createHDREnvironment(
-                    assetFileLocation = "environments/studio.hdr",
-                )
-            },
             isOpaque = false,
         )
     }
