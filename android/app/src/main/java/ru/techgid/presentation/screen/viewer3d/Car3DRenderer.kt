@@ -82,12 +82,11 @@ fun Car3DRenderer(
 
     var lastTouchMs by remember { mutableLongStateOf(System.currentTimeMillis()) }
 
-    LaunchedEffect(interactive) {
-        if (!interactive) return@LaunchedEffect
+    LaunchedEffect(Unit) {
         while (isActive) {
             withFrameMillis {
                 val now = System.currentTimeMillis()
-                if (now - lastTouchMs > 2500L) {
+                if (!interactive || now - lastTouchMs > 2500L) {
                     cameraState.yaw += 0.003f
                 }
             }

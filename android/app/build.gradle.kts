@@ -102,6 +102,9 @@ dependencies {
     implementation(libs.security.crypto)
     implementation(libs.sqlcipher)
 
+    // Splash Screen
+    implementation(libs.splashscreen)
+
     // 3D rendering (SceneView wraps Google Filament)
     implementation(libs.sceneview.compose)
 }

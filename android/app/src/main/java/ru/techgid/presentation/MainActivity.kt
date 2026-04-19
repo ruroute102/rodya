@@ -9,6 +9,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import dagger.hilt.android.AndroidEntryPoint
 import ru.techgid.data.repository.AppPrefsRepository
 import ru.techgid.presentation.navigation.TechGidNavHost
@@ -22,6 +23,7 @@ class MainActivity : ComponentActivity() {
     lateinit var prefs: AppPrefsRepository
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        installSplashScreen()
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {

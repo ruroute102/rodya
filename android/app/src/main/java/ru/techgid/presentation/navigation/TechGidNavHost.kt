@@ -1,5 +1,9 @@
 package ru.techgid.presentation.navigation
 
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
@@ -27,6 +31,8 @@ import ru.techgid.presentation.screen.search.SearchScreen
 import ru.techgid.presentation.screen.settings.SettingsScreen
 import ru.techgid.presentation.screen.techspecs.TechSpecsScreen
 import ru.techgid.presentation.screen.viewer3d.Viewer3DScreen
+
+private const val ANIM_DURATION = 300
 
 @Composable
 fun TechGidNavHost() {
@@ -70,9 +76,39 @@ fun TechGidNavHost() {
             navController = navController,
             startDestination = NavRoute.Home.route,
             modifier = Modifier.padding(innerPadding),
+            enterTransition = {
+                slideIntoContainer(
+                    towards = AnimatedContentTransitionScope.SlideDirection.Start,
+                    animationSpec = tween(ANIM_DURATION),
+                ) + fadeIn(animationSpec = tween(ANIM_DURATION))
+            },
+            exitTransition = {
+                slideOutOfContainer(
+                    towards = AnimatedContentTransitionScope.SlideDirection.Start,
+                    animationSpec = tween(ANIM_DURATION),
+                ) + fadeOut(animationSpec = tween(ANIM_DURATION))
+            },
+            popEnterTransition = {
+                slideIntoContainer(
+                    towards = AnimatedContentTransitionScope.SlideDirection.End,
+                    animationSpec = tween(ANIM_DURATION),
+                ) + fadeIn(animationSpec = tween(ANIM_DURATION))
+            },
+            popExitTransition = {
+                slideOutOfContainer(
+                    towards = AnimatedContentTransitionScope.SlideDirection.End,
+                    animationSpec = tween(ANIM_DURATION),
+                ) + fadeOut(animationSpec = tween(ANIM_DURATION))
+            },
         ) {
-            // Home
-            composable(NavRoute.Home.route) {
+            // Home — fade only (tab switch)
+            composable(
+                route = NavRoute.Home.route,
+                enterTransition = { fadeIn(tween(ANIM_DURATION)) },
+                exitTransition = { fadeOut(tween(ANIM_DURATION)) },
+                popEnterTransition = { fadeIn(tween(ANIM_DURATION)) },
+                popExitTransition = { fadeOut(tween(ANIM_DURATION)) },
+            ) {
                 HomeScreen(
                     onSelectCar = { navController.navigate(NavRoute.CarSelect.route) },
                     onCatalog = { navController.navigate(NavRoute.Catalog.create(1)) },
@@ -118,8 +154,14 @@ fun TechGidNavHost() {
                 )
             }
 
-            // Search
-            composable(NavRoute.Search.route) {
+            // Search — fade only (tab switch)
+            composable(
+                route = NavRoute.Search.route,
+                enterTransition = { fadeIn(tween(ANIM_DURATION)) },
+                exitTransition = { fadeOut(tween(ANIM_DURATION)) },
+                popEnterTransition = { fadeIn(tween(ANIM_DURATION)) },
+                popExitTransition = { fadeOut(tween(ANIM_DURATION)) },
+            ) {
                 SearchScreen(
                     onBack = { navController.popBackStack() },
                     onGuideClick = { guideId ->
@@ -182,8 +224,14 @@ fun TechGidNavHost() {
                 )
             }
 
-            // Profile
-            composable(NavRoute.Profile.route) {
+            // Profile — fade only (tab switch)
+            composable(
+                route = NavRoute.Profile.route,
+                enterTransition = { fadeIn(tween(ANIM_DURATION)) },
+                exitTransition = { fadeOut(tween(ANIM_DURATION)) },
+                popEnterTransition = { fadeIn(tween(ANIM_DURATION)) },
+                popExitTransition = { fadeOut(tween(ANIM_DURATION)) },
+            ) {
                 ProfileScreen(
                     onLogout = {
                         navController.navigate(NavRoute.Home.route) {

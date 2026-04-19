@@ -19,6 +19,7 @@ activity-compose = "1.9.3"
 security-crypto = "1.1.0-alpha06"
 sqlcipher = "4.6.1"
 sceneview = "2.2.1"
+splashscreen = "1.0.1"
 
 [libraries]
 # AndroidX Core
@@ -72,6 +73,9 @@ paging-compose = { group = "androidx.paging", name = "paging-compose", version.r
 # Security
 security-crypto = { group = "androidx.security", name = "security-crypto", version.ref = "security-crypto" }
 sqlcipher = { group = "net.zetetic", name = "sqlcipher-android", version.ref = "sqlcipher" }
+
+# Splash Screen
+splashscreen = { group = "androidx.core", name = "core-splashscreen", version.ref = "splashscreen" }
 
 # SceneView (Filament-based 3D rendering for Compose)
 sceneview-compose = { group = "io.github.sceneview", name = "sceneview", version.ref = "sceneview" }
