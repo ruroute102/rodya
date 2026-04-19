@@ -53,6 +53,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.platform.LocalContext
 import ru.techgid.presentation.components.DifficultyBadge
 import ru.techgid.presentation.theme.TechGidTheme
 
@@ -83,6 +84,11 @@ fun Viewer3DScreen(
     } else {
         activeHighlightIds = selectedNode.highlightPartIds
         activeHideIds = hiddenPartIds
+    }
+
+    val context = LocalContext.current
+    val glbAssetPath = remember(sceneConfig.displayName) {
+        ModelRegistry.resolveAssetPath(sceneConfig.displayName, context)
     }
 
     val viewportBg = if (sceneConfig.ghostMode) {
@@ -135,18 +141,26 @@ fun Viewer3DScreen(
                 .clip(RoundedCornerShape(24.dp))
                 .background(viewportBg),
         ) {
-            Car3DRenderer(
-                mesh = mesh,
-                cameraState = cameraState,
-                modifier = Modifier.fillMaxSize(),
-                options = RenderOptions(
-                    highlightedPartIds = activeHighlightIds,
-                    hiddenPartIds = activeHideIds,
-                ),
-                accentColor = Color(0xFFFF6D00),
-                interactive = true,
-                ghostMode = sceneConfig.ghostMode,
-            )
+            if (glbAssetPath != null) {
+                Car3DGlbRenderer(
+                    modelAssetPath = glbAssetPath,
+                    modifier = Modifier.fillMaxSize(),
+                    bgColor = viewportBg,
+                )
+            } else {
+                Car3DRenderer(
+                    mesh = mesh,
+                    cameraState = cameraState,
+                    modifier = Modifier.fillMaxSize(),
+                    options = RenderOptions(
+                        highlightedPartIds = activeHighlightIds,
+                        hiddenPartIds = activeHideIds,
+                    ),
+                    accentColor = Color(0xFFFF6D00),
+                    interactive = true,
+                    ghostMode = sceneConfig.ghostMode,
+                )
+            }
 
             Column(
                 modifier = Modifier

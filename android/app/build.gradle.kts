@@ -101,4 +101,7 @@ dependencies {
     // Security
     implementation(libs.security.crypto)
     implementation(libs.sqlcipher)
+
+    // 3D rendering (SceneView wraps Google Filament)
+    implementation(libs.sceneview.compose)
 }
