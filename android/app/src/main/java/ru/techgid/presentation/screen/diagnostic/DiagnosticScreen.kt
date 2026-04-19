@@ -1,5 +1,7 @@
 package ru.techgid.presentation.screen.diagnostic
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -45,6 +47,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import ru.techgid.domain.model.DiagnosticResult
 import ru.techgid.presentation.components.PrimaryButton
+import ru.techgid.presentation.components.SkeletonSymptomCard
 import ru.techgid.presentation.theme.TechGidColors
 import ru.techgid.presentation.theme.TechGidTheme
 
@@ -102,11 +105,13 @@ fun DiagnosticScreen(
         }
 
         if (state.isLoading && state.symptomCategories.isEmpty()) {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center,
+            LazyColumn(
+                modifier = Modifier.weight(1f),
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                userScrollEnabled = false,
             ) {
-                CircularProgressIndicator()
+                items(3) { SkeletonSymptomCard() }
             }
         } else if (!state.showResults) {
             // Symptom selection
@@ -284,11 +289,18 @@ private fun DiagnosticResultCard(
 
             Spacer(modifier = Modifier.height(8.dp))
 
+            val animatedProgress by animateFloatAsState(
+                targetValue = result.probability,
+                animationSpec = tween(durationMillis = 800, delayMillis = 200),
+                label = "prob_bar",
+            )
+
             LinearProgressIndicator(
-                progress = { result.probability },
+                progress = { animatedProgress },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(4.dp),
+                    .height(6.dp)
+                    .clip(RoundedCornerShape(3.dp)),
                 color = when {
                     result.probability >= 0.7f -> TechGidColors.WarningDanger
                     result.probability >= 0.4f -> TechGidColors.WarningCaution

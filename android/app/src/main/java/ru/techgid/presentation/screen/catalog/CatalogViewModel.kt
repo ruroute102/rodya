@@ -100,6 +100,10 @@ class CatalogViewModel @Inject constructor(
         }
     }
 
+    fun refresh() {
+        loadGuides(resetPage = true)
+    }
+
     fun clearError() {
         _uiState.update { it.copy(error = null) }
     }
