@@ -177,15 +177,16 @@ fun Car3DRenderer(
 
                 when {
                     isGhostFace -> {
-                        val fillAlpha = if (isHighlighted) 0.32f
-                            else 0.14f + fresnel * 0.10f
+                        val fillAlpha = if (isHighlighted) 0.34f
+                            else 0.14f + fresnel * 0.12f
                         val ambR = ghostGrdR * (1f - hemi) + ghostSkyR * hemi
                         val ambG = ghostGrdG * (1f - hemi) + ghostSkyG * hemi
                         val ambB = ghostGrdB * (1f - hemi) + ghostSkyB * hemi
                         val base = f.face.baseColor
-                        val litR = base.red * (0.35f + 0.55f * diffuse) + ambR * 0.30f + spec32 * 0.45f
-                        val litG = base.green * (0.35f + 0.55f * diffuse) + ambG * 0.30f + spec32 * 0.50f
-                        val litB = base.blue * (0.35f + 0.55f * diffuse) + ambB * 0.35f + spec32 * 0.60f
+                        val rim = fresnel * fresnel * 0.75f
+                        val litR = base.red * (0.32f + 0.50f * diffuse) + ambR * 0.28f + spec32 * 0.45f + rim * 0.55f
+                        val litG = base.green * (0.32f + 0.50f * diffuse) + ambG * 0.30f + spec32 * 0.55f + rim * 0.78f
+                        val litB = base.blue * (0.32f + 0.50f * diffuse) + ambB * 0.34f + spec32 * 0.70f + rim * 1.05f
                         drawPath(
                             path,
                             color = Color(
@@ -195,12 +196,12 @@ fun Car3DRenderer(
                                 alpha = fillAlpha,
                             ),
                         )
-                        val wireAlpha = 0.02f + fresnel * 0.09f
-                        val wireWidth = 0.2f + fresnel * 0.6f
+                        val wireAlpha = 0.02f + fresnel * 0.12f
+                        val wireWidth = 0.2f + fresnel * 0.7f
                         val wireColor = if (isHighlighted)
-                            accentColor.copy(alpha = (wireAlpha * 2.2f).coerceAtMost(1f))
+                            accentColor.copy(alpha = (wireAlpha * 2.4f).coerceAtMost(1f))
                         else
-                            Color(0.50f, 0.68f, 0.90f, wireAlpha)
+                            Color(0.60f, 0.78f, 1.0f, wireAlpha)
                         drawPath(path, color = wireColor, style = Stroke(width = wireWidth))
                     }
 
