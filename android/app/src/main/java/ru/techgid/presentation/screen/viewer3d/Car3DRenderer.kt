@@ -84,6 +84,22 @@ fun Car3DRenderer(
 
             if (ghostMode) {
                 drawRect(color = Color(0xFF0A1020))
+
+                val shadowCenterX = canvasSize.width / 2f
+                val shadowCenterY = canvasSize.height * 0.74f
+                val shadowW = canvasSize.width * 0.60f
+                val shadowH = canvasSize.height * 0.055f
+                for (i in 4 downTo 0) {
+                    val t = i / 4f
+                    val w = shadowW * (0.55f + 0.45f * t)
+                    val h = shadowH * (0.55f + 0.45f * t)
+                    val a = (0.10f * (1f - t) + 0.02f).coerceAtLeast(0f)
+                    drawOval(
+                        color = Color(0f, 0f, 0f, a),
+                        topLeft = Offset(shadowCenterX - w / 2f, shadowCenterY - h / 2f),
+                        size = Size(w, h),
+                    )
+                }
             }
 
             val yaw = cameraState.yaw
