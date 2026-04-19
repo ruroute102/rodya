@@ -1,7 +1,6 @@
 package ru.techgid.presentation.screen.viewer3d
 
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -14,7 +13,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -70,14 +68,10 @@ fun Car3DRenderer(
         modifier = modifier.let { m ->
             if (interactive) {
                 m.pointerInput(Unit) {
-                    detectDragGestures { change, dragAmount ->
-                        change.consume()
-                        cameraState.yaw += dragAmount.x * 0.009f
-                        cameraState.pitch = (cameraState.pitch - dragAmount.y * 0.009f)
+                    detectTransformGestures { _, pan, zoomChange, _ ->
+                        cameraState.yaw += pan.x * 0.009f
+                        cameraState.pitch = (cameraState.pitch - pan.y * 0.009f)
                             .coerceIn((-PI / 2 + 0.1).toFloat(), (PI / 2 - 0.1).toFloat())
-                    }
-                }.pointerInput(Unit) {
-                    detectTransformGestures { _, _, zoomChange, _ ->
                         cameraState.zoom = (cameraState.zoom * zoomChange).coerceIn(0.4f, 2.5f)
                     }
                 }
@@ -89,15 +83,7 @@ fun Car3DRenderer(
             if (canvasSize.width <= 0f || canvasSize.height <= 0f) return@Canvas
 
             if (ghostMode) {
-                val bgCenter = Offset(canvasSize.width / 2f, canvasSize.height / 2f)
-                val bgRadius = maxOf(canvasSize.width, canvasSize.height) * 0.85f
-                drawRect(
-                    brush = Brush.radialGradient(
-                        colors = listOf(Color(0xFF0E1525), Color(0xFF050A10)),
-                        center = bgCenter,
-                        radius = bgRadius,
-                    ),
-                )
+                drawRect(color = Color(0xFF0A1020))
             }
 
             val yaw = cameraState.yaw
@@ -155,28 +141,28 @@ fun Car3DRenderer(
 
                 when {
                     isGhostFace -> {
-                        val fillAlpha = if (isHighlighted) 0.14f
-                            else 0.03f + fresnel * 0.07f
-                        val shade = 0.5f + 0.5f * lambert
+                        val fillAlpha = if (isHighlighted) 0.28f
+                            else 0.12f + fresnel * 0.08f
+                        val shade = 0.45f + 0.55f * lambert
                         val base = f.face.baseColor
                         val fill = Color(
-                            red = (base.red * shade * 0.55f + 0.18f).coerceIn(0f, 1f),
-                            green = (base.green * shade * 0.55f + 0.22f).coerceIn(0f, 1f),
-                            blue = (base.blue * shade * 0.55f + 0.38f).coerceIn(0f, 1f),
+                            red = (base.red * shade * 0.72f + 0.08f).coerceIn(0f, 1f),
+                            green = (base.green * shade * 0.72f + 0.12f).coerceIn(0f, 1f),
+                            blue = (base.blue * shade * 0.72f + 0.20f).coerceIn(0f, 1f),
                             alpha = fillAlpha,
                         )
                         drawPath(path, color = fill)
-                        val wireAlpha = 0.04f + fresnel * 0.30f
-                        val wireWidth = 0.3f + fresnel * 0.9f
+                        val wireAlpha = 0.02f + fresnel * 0.08f
+                        val wireWidth = 0.2f + fresnel * 0.5f
                         val wireColor = if (isHighlighted)
-                            accentColor.copy(alpha = (wireAlpha * 1.5f).coerceAtMost(1f))
+                            accentColor.copy(alpha = (wireAlpha * 2f).coerceAtMost(1f))
                         else
-                            Color(0.55f, 0.78f, 1.0f, wireAlpha)
+                            Color(0.45f, 0.62f, 0.85f, wireAlpha)
                         drawPath(path, color = wireColor, style = Stroke(width = wireWidth))
                     }
 
                     isSemiGhost -> {
-                        val semiAlpha = 0.18f + fresnel * 0.12f
+                        val semiAlpha = 0.25f + fresnel * 0.10f
                         val shade = 0.35f + 0.65f * lambert
                         val base = f.face.baseColor
                         val fill = Color(
@@ -186,9 +172,9 @@ fun Car3DRenderer(
                             alpha = semiAlpha,
                         )
                         drawPath(path, color = fill)
-                        val wireAlpha = 0.05f + fresnel * 0.14f
-                        drawPath(path, color = Color(0.5f, 0.7f, 0.9f, wireAlpha),
-                            style = Stroke(width = 0.4f))
+                        val wireAlpha = 0.03f + fresnel * 0.08f
+                        drawPath(path, color = Color(0.4f, 0.55f, 0.75f, wireAlpha),
+                            style = Stroke(width = 0.3f))
                     }
 
                     else -> {
