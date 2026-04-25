@@ -48,7 +48,7 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -77,23 +77,23 @@ fun RemindersScreen(
     val state by viewModel.uiState.collectAsState()
     var showAddSheet by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState()
-    var deleteTargetId by remember { mutableIntStateOf(-1) }
+    var deleteTargetId by remember { mutableLongStateOf(-1L) }
 
-    if (deleteTargetId >= 0) {
+    if (deleteTargetId >= 0L) {
         AlertDialog(
-            onDismissRequest = { deleteTargetId = -1 },
+            onDismissRequest = { deleteTargetId = -1L },
             title = { Text("Удалить напоминание?") },
             text = { Text("Это действие нельзя отменить.") },
             confirmButton = {
                 TextButton(onClick = {
                     viewModel.delete(deleteTargetId)
-                    deleteTargetId = -1
+                    deleteTargetId = -1L
                 }) {
                     Text("Удалить", color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {
-                TextButton(onClick = { deleteTargetId = -1 }) {
+                TextButton(onClick = { deleteTargetId = -1L }) {
                     Text("Отмена")
                 }
             },

@@ -47,8 +47,12 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -76,10 +80,24 @@ fun GuideDetailScreen(
     onBack: () -> Unit,
 ) {
     val state by viewModel.uiState.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
 
+    LaunchedEffect(state.snackbarMessage) {
+        val message = state.snackbarMessage
+        if (message != null) {
+            snackbarHostState.showSnackbar(message)
+            viewModel.snackbarShown()
+        }
+    }
+
+    Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+        containerColor = MaterialTheme.colorScheme.background,
+    ) { paddingValues ->
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .padding(paddingValues)
             .statusBarsPadding()
             .navigationBarsPadding()
             .background(MaterialTheme.colorScheme.background),
@@ -509,17 +527,26 @@ fun GuideDetailScreen(
                 Spacer(Modifier.width(4.dp))
                 IconButton(
                     onClick = { viewModel.addComment() },
-                    enabled = state.commentText.isNotBlank(),
+                    enabled = state.commentText.isNotBlank() && !state.isAddingComment,
                 ) {
-                    Icon(
-                        Icons.AutoMirrored.Filled.Send,
-                        "Отправить",
-                        tint = if (state.commentText.isNotBlank()) MaterialTheme.colorScheme.primary
-                        else TechGidTheme.extendedColors.textTertiary,
-                    )
+                    if (state.isAddingComment) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(18.dp),
+                            strokeWidth = 2.dp,
+                            color = MaterialTheme.colorScheme.primary,
+                        )
+                    } else {
+                        Icon(
+                            Icons.AutoMirrored.Filled.Send,
+                            "Отправить",
+                            tint = if (state.commentText.isNotBlank()) MaterialTheme.colorScheme.primary
+                            else TechGidTheme.extendedColors.textTertiary,
+                        )
+                    }
                 }
             }
         }
+    }
     }
 }
 

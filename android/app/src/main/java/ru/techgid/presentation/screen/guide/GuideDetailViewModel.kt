@@ -24,6 +24,8 @@ data class GuideDetailUiState(
     val isLoading: Boolean = false,
     val isSavedOffline: Boolean = false,
     val isFavorite: Boolean = false,
+    val isAddingComment: Boolean = false,
+    val snackbarMessage: String? = null,
     val doneStepIds: Set<Int> = emptySet(),
     val error: String? = null,
 ) {
@@ -157,9 +159,10 @@ class GuideDetailViewModel @Inject constructor(
     fun addComment() {
         val state = _uiState.value
         val text = state.commentText.trim()
-        if (text.isBlank()) return
+        if (text.isBlank() || state.isAddingComment) return
 
         viewModelScope.launch {
+            _uiState.update { it.copy(isAddingComment = true) }
             try {
                 val comment = guideRepository.addComment(
                     guideId = guideId,
@@ -171,11 +174,16 @@ class GuideDetailViewModel @Inject constructor(
                     it.copy(
                         comments = it.comments + comment,
                         commentText = "",
+                        isAddingComment = false,
+                        snackbarMessage = "Комментарий добавлен",
                     )
                 }
             } catch (e: Exception) {
                 _uiState.update {
-                    it.copy(error = e.message ?: "Failed to add comment")
+                    it.copy(
+                        isAddingComment = false,
+                        snackbarMessage = "Не удалось отправить комментарий",
+                    )
                 }
             }
         }
@@ -187,17 +195,31 @@ class GuideDetailViewModel @Inject constructor(
             try {
                 if (state.isSavedOffline) {
                     guideRepository.removeGuideOffline(guideId)
-                    _uiState.update { it.copy(isSavedOffline = false) }
+                    _uiState.update {
+                        it.copy(
+                            isSavedOffline = false,
+                            snackbarMessage = "Убрано из офлайн-доступа",
+                        )
+                    }
                 } else {
                     guideRepository.saveGuideOffline(guideId, configurationId = 0)
-                    _uiState.update { it.copy(isSavedOffline = true) }
+                    _uiState.update {
+                        it.copy(
+                            isSavedOffline = true,
+                            snackbarMessage = "Сохранено для офлайн-доступа",
+                        )
+                    }
                 }
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 _uiState.update {
-                    it.copy(error = e.message ?: "Failed to toggle offline save")
+                    it.copy(snackbarMessage = "Не удалось изменить офлайн-статус")
                 }
             }
         }
+    }
+
+    fun snackbarShown() {
+        _uiState.update { it.copy(snackbarMessage = null) }
     }
 
     fun clearError() {
