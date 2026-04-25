@@ -3,6 +3,8 @@ package ru.techgid.presentation.screen.search
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -36,6 +38,8 @@ class SearchViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(SearchUiState())
     val uiState: StateFlow<SearchUiState> = _uiState.asStateFlow()
 
+    private var searchJob: Job? = null
+
     init {
         viewModelScope.launch {
             prefs.recentSearches.collect { saved ->
@@ -48,11 +52,14 @@ class SearchViewModel @Inject constructor(
     fun search(query: String) {
         _uiState.update { it.copy(query = query) }
         if (query.isBlank()) {
+            searchJob?.cancel()
             _uiState.update { it.copy(results = emptyList(), isSearching = false) }
             return
         }
-        viewModelScope.launch {
+        searchJob?.cancel()
+        searchJob = viewModelScope.launch {
             _uiState.update { it.copy(isSearching = true) }
+            delay(350)
             prefs.addRecentSearch(query)
             try {
                 val result = guideRepository.getGuides(search = query)
@@ -64,6 +71,16 @@ class SearchViewModel @Inject constructor(
     }
 
     fun selectRecent(query: String) {
-        search(query)
+        _uiState.update { it.copy(query = query) }
+        searchJob?.cancel()
+        searchJob = viewModelScope.launch {
+            _uiState.update { it.copy(isSearching = true) }
+            try {
+                val result = guideRepository.getGuides(search = query)
+                _uiState.update { it.copy(results = result.items, isSearching = false) }
+            } catch (_: Exception) {
+                _uiState.update { it.copy(results = emptyList(), isSearching = false) }
+            }
+        }
     }
 }
