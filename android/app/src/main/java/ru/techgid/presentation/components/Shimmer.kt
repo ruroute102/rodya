@@ -123,6 +123,50 @@ fun SkeletonGuideCard(modifier: Modifier = Modifier) {
 }
 
 @Composable
+fun SkeletonGuideDetail(modifier: Modifier = Modifier) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Spacer(Modifier.height(8.dp))
+        ShimmerBox(modifier = Modifier.fillMaxWidth(0.7f), height = 28.dp)
+        ShimmerBox(modifier = Modifier.fillMaxWidth(0.95f), height = 14.dp)
+        ShimmerBox(modifier = Modifier.fillMaxWidth(0.9f), height = 14.dp)
+        ShimmerBox(modifier = Modifier.fillMaxWidth(0.5f), height = 14.dp)
+        Spacer(Modifier.height(4.dp))
+        ShimmerBox(
+            modifier = Modifier.fillMaxWidth(),
+            height = 240.dp,
+            cornerRadius = 20.dp,
+        )
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            ShimmerBox(
+                modifier = Modifier.weight(1f),
+                height = 48.dp,
+                cornerRadius = 14.dp,
+            )
+            ShimmerBox(
+                modifier = Modifier.weight(1f),
+                height = 48.dp,
+                cornerRadius = 14.dp,
+            )
+        }
+        ShimmerBox(
+            modifier = Modifier.fillMaxWidth(),
+            height = 56.dp,
+            cornerRadius = 14.dp,
+        )
+        ShimmerBox(
+            modifier = Modifier.fillMaxWidth(),
+            height = 80.dp,
+            cornerRadius = 14.dp,
+        )
+    }
+}
+
+@Composable
 fun SkeletonSymptomCard(modifier: Modifier = Modifier) {
     Card(
         modifier = modifier.fillMaxWidth(),

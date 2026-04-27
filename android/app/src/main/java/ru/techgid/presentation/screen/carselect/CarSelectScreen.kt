@@ -24,13 +24,18 @@ import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.HealthAndSafety
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -66,6 +71,15 @@ fun CarSelectScreen(
 ) {
     val state by viewModel.uiState.collectAsState()
     var activeSelector by remember { mutableStateOf<SelectorType?>(null) }
+    val snackbarHostState = remember { SnackbarHostState() }
+    var lastShownEngineId by remember { mutableStateOf<Int?>(null) }
+
+    LaunchedEffect(state.isComplete, state.selectedEngine?.id) {
+        if (state.isComplete && state.selectedEngine?.id != lastShownEngineId) {
+            lastShownEngineId = state.selectedEngine?.id
+            snackbarHostState.showSnackbar("Авто сохранено. Можно открыть инструкции.")
+        }
+    }
 
     // Step progress
     val completedSteps = listOfNotNull(
@@ -75,9 +89,14 @@ fun CarSelectScreen(
         state.selectedEngine,
     ).size
 
+    Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+        containerColor = MaterialTheme.colorScheme.background,
+    ) { paddingValues ->
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .padding(paddingValues)
             .statusBarsPadding()
             .navigationBarsPadding()
             .background(MaterialTheme.colorScheme.background),
@@ -284,6 +303,27 @@ fun CarSelectScreen(
                 enabled = state.isComplete,
             )
 
+            if (state.selectedBrand != null) {
+                Spacer(modifier = Modifier.height(6.dp))
+                TextButton(
+                    onClick = { viewModel.reset() },
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Refresh,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp),
+                        tint = TechGidTheme.extendedColors.textTertiary,
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = "Сбросить выбор",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = TechGidTheme.extendedColors.textTertiary,
+                    )
+                }
+            }
+
             Spacer(modifier = Modifier.height(24.dp))
 
             // Quick links
@@ -411,6 +451,7 @@ fun CarSelectScreen(
                 Spacer(modifier = Modifier.height(32.dp))
             }
         }
+    }
     }
 }
 

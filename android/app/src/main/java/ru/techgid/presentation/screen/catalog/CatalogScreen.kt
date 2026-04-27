@@ -25,6 +25,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -32,6 +33,8 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -53,6 +56,7 @@ import ru.techgid.presentation.components.SkeletonGuideCard
 import ru.techgid.presentation.components.WarningBlock
 import ru.techgid.presentation.theme.TechGidTheme
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CatalogScreen(
     configurationId: Int,
@@ -61,6 +65,7 @@ fun CatalogScreen(
     onBack: () -> Unit,
 ) {
     val state by viewModel.uiState.collectAsState()
+    val pullToRefreshState = rememberPullToRefreshState()
 
     Column(
         modifier = Modifier
@@ -233,42 +238,49 @@ fun CatalogScreen(
                     if (reachedEnd) viewModel.loadNextPage()
                 }
 
-                LazyColumn(
-                    state = listState,
+                PullToRefreshBox(
+                    isRefreshing = state.isLoading && state.guides.isNotEmpty() && state.currentPage == 1,
+                    onRefresh = { viewModel.refresh() },
+                    state = pullToRefreshState,
                     modifier = Modifier.weight(1f),
-                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
-                    items(state.guides, key = { it.id }) { guide ->
-                        GuideCard(
-                            guide = guide,
-                            onClick = { onGuideClick(guide.id) },
-                        )
-                    }
-
-                    if (state.isLoading) {
-                        items(2) {
-                            SkeletonGuideCard()
+                    LazyColumn(
+                        state = listState,
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
+                        items(state.guides, key = { it.id }) { guide ->
+                            GuideCard(
+                                guide = guide,
+                                onClick = { onGuideClick(guide.id) },
+                            )
                         }
-                    }
 
-                    item {
-                        Spacer(modifier = Modifier.height(8.dp))
-                        PrimaryButton(
-                            text = "Предложить инструкцию",
-                            onClick = { },
-                        )
-                    }
+                        if (state.isLoading && state.currentPage > 1) {
+                            items(2) {
+                                SkeletonGuideCard()
+                            }
+                        }
 
-                    item {
-                        Spacer(modifier = Modifier.height(4.dp))
-                        WarningBlock(
-                            text = "Все инструкции проходят модерацию. Следуйте технике безопасности.",
-                            severity = WarningSeverity.INFO,
-                        )
-                    }
+                        item {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            PrimaryButton(
+                                text = "Предложить инструкцию",
+                                onClick = { },
+                            )
+                        }
 
-                    item { Spacer(modifier = Modifier.height(16.dp)) }
+                        item {
+                            Spacer(modifier = Modifier.height(4.dp))
+                            WarningBlock(
+                                text = "Все инструкции проходят модерацию. Следуйте технике безопасности.",
+                                severity = WarningSeverity.INFO,
+                            )
+                        }
+
+                        item { Spacer(modifier = Modifier.height(16.dp)) }
+                    }
                 }
             }
         }

@@ -17,11 +17,18 @@ import java.util.Date
 import java.util.Locale
 import javax.inject.Inject
 
+enum class ServiceSortMode(val label: String) {
+    DATE_DESC("По дате"),
+    COST_DESC("По стоимости"),
+    MILEAGE_DESC("По пробегу"),
+}
+
 data class ServiceHistoryUiState(
     val records: List<ServiceRecordEntity> = emptyList(),
     val totalCost: Int = 0,
     val maxMileage: Int = 0,
     val count: Int = 0,
+    val sortMode: ServiceSortMode = ServiceSortMode.DATE_DESC,
 )
 
 @HiltViewModel
@@ -45,15 +52,37 @@ class ServiceHistoryViewModel @Inject constructor(
                 repository.observeMaxMileage(),
                 repository.observeCount(),
             ) { records, total, mileage, count ->
-                ServiceHistoryUiState(
-                    records = records,
-                    totalCost = total,
-                    maxMileage = mileage,
-                    count = count,
-                )
-            }.collect { state -> _uiState.update { state } }
+                Quad(records, total, mileage, count)
+            }.collect { (records, total, mileage, count) ->
+                _uiState.update { current ->
+                    current.copy(
+                        records = applySort(records, current.sortMode),
+                        totalCost = total,
+                        maxMileage = mileage,
+                        count = count,
+                    )
+                }
+            }
         }
     }
+
+    fun setSortMode(mode: ServiceSortMode) {
+        _uiState.update { it.copy(sortMode = mode, records = applySort(it.records, mode)) }
+    }
+
+    private fun applySort(records: List<ServiceRecordEntity>, mode: ServiceSortMode): List<ServiceRecordEntity> =
+        when (mode) {
+            ServiceSortMode.DATE_DESC -> records.sortedByDescending { it.dateIso }
+            ServiceSortMode.COST_DESC -> records.sortedByDescending { it.costRub }
+            ServiceSortMode.MILEAGE_DESC -> records.sortedByDescending { it.mileageKm }
+        }
+
+    private data class Quad(
+        val records: List<ServiceRecordEntity>,
+        val total: Int,
+        val mileage: Int,
+        val count: Int,
+    )
 
     private fun ensureSeed() {
         viewModelScope.launch {

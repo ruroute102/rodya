@@ -243,4 +243,14 @@ class CarSelectViewModel @Inject constructor(
     fun clearError() {
         _error.value = null
     }
+
+    fun reset() {
+        _selectedBrand.value = null
+        _selectedModel.value = null
+        _selectedGeneration.value = null
+        _selectedEngine.value = null
+        _models.value = emptyList()
+        _generations.value = emptyList()
+        _engines.value = emptyList()
+    }
 }

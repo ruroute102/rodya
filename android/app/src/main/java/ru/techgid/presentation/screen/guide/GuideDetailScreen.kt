@@ -69,6 +69,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import ru.techgid.domain.model.Comment
+import ru.techgid.presentation.components.SkeletonGuideDetail
 import ru.techgid.presentation.components.WarningBlock
 import ru.techgid.presentation.theme.TechGidColors
 import ru.techgid.presentation.theme.TechGidTheme
@@ -180,12 +181,7 @@ fun GuideDetailScreen(
         }
 
         if (state.isLoading) {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center,
-            ) {
-                CircularProgressIndicator()
-            }
+            SkeletonGuideDetail(modifier = Modifier.fillMaxSize())
         } else if (state.error != null && state.guideDetail == null) {
             Box(
                 modifier = Modifier.fillMaxSize(),
