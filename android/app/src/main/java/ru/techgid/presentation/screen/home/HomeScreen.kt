@@ -21,6 +21,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
 import androidx.compose.material.icons.automirrored.filled.MenuBook
+import androidx.compose.material.icons.filled.Calculate
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.History
@@ -69,6 +70,7 @@ fun HomeScreen(
     onViewer3D: () -> Unit = {},
     onServiceHistory: () -> Unit = {},
     onReminders: () -> Unit = {},
+    onConsumables: () -> Unit = {},
     onGuideClick: (Int) -> Unit = {},
 ) {
     val state by viewModel.uiState.collectAsState()
@@ -276,6 +278,11 @@ fun HomeScreen(
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             QuickActionCard(Modifier.weight(1f), Icons.Filled.DirectionsCar, "3D-модель", "Узлы авто", onViewer3D)
             QuickActionCard(Modifier.weight(1f), Icons.Filled.History, "История ТО", "Журнал", onServiceHistory)
+        }
+        Spacer(Modifier.height(12.dp))
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            QuickActionCard(Modifier.weight(1f), Icons.Filled.Calculate, "Расходники", "Объёмы и нормы", onConsumables)
+            QuickActionCard(Modifier.weight(1f), Icons.Filled.Notifications, "Напоминания", "ТО по сроку", onReminders)
         }
 
         Spacer(Modifier.height(24.dp))

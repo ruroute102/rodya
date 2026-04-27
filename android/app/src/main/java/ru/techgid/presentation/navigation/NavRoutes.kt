@@ -25,4 +25,5 @@ sealed class NavRoute(val route: String) {
     data object Favorites : NavRoute("favorites")
     data object EditProfile : NavRoute("edit_profile")
     data object Reminders : NavRoute("reminders")
+    data object Consumables : NavRoute("consumables")
 }

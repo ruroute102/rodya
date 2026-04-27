@@ -34,6 +34,7 @@ import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Inventory2
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -58,9 +59,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import android.content.Intent
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -82,6 +85,7 @@ fun GuideDetailScreen(
 ) {
     val state by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
+    val context = LocalContext.current
 
     LaunchedEffect(state.snackbarMessage) {
         val message = state.snackbarMessage
@@ -137,6 +141,29 @@ fun GuideDetailScreen(
                     "В избранное",
                     tint = if (state.isFavorite) MaterialTheme.colorScheme.error
                     else TechGidTheme.extendedColors.iconTint,
+                )
+            }
+            IconButton(
+                onClick = {
+                    val text = buildShareText(state)
+                    if (text.isNotBlank()) {
+                        val intent = Intent(Intent.ACTION_SEND).apply {
+                            type = "text/plain"
+                            putExtra(Intent.EXTRA_TEXT, text)
+                            putExtra(
+                                Intent.EXTRA_SUBJECT,
+                                state.guideDetail?.title ?: "Список для ремонта",
+                            )
+                        }
+                        context.startActivity(Intent.createChooser(intent, "Поделиться списком"))
+                    }
+                },
+                enabled = state.guideDetail != null,
+            ) {
+                Icon(
+                    Icons.Filled.Share,
+                    "Поделиться списком",
+                    tint = TechGidTheme.extendedColors.iconTint,
                 )
             }
             IconButton(onClick = { viewModel.toggleOfflineSave() }) {
@@ -650,5 +677,47 @@ private fun CommentItem(comment: Comment) {
                 CommentItem(comment = reply)
             }
         }
+    }
+}
+
+private fun buildShareText(state: GuideDetailUiState): String {
+    val guide = state.guideDetail ?: return ""
+    val tools = guide.steps.flatMap { it.tools }
+        .distinctBy { it.toolName + (it.toolSpec ?: "") }
+    val consumables = guide.steps.flatMap { it.consumables }
+        .distinctBy { it.name + (it.partNumber ?: "") }
+
+    return buildString {
+        append("🔧 ")
+        append(guide.title)
+        appendLine()
+        if (guide.componentName.isNotBlank()) {
+            append(guide.componentName)
+            appendLine()
+        }
+        appendLine()
+        if (tools.isNotEmpty()) {
+            appendLine("Инструменты:")
+            tools.forEach { tool ->
+                append("• ")
+                append(tool.toolName)
+                tool.toolSpec?.let { append(" ($it)") }
+                if (!tool.isRequired) append(" — необязательно")
+                appendLine()
+            }
+            appendLine()
+        }
+        if (consumables.isNotEmpty()) {
+            appendLine("Расходники и запчасти:")
+            consumables.forEach { c ->
+                append("• ")
+                append(c.name)
+                c.partNumber?.let { append(", арт. $it") }
+                c.quantity?.let { append(" × $it") }
+                appendLine()
+            }
+            appendLine()
+        }
+        append("— Список из приложения ТехГид")
     }
 }
