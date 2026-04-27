@@ -126,6 +126,10 @@ fun EditProfileScreen(
                     .padding(horizontal = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
+                val nameError = state.name.isNotEmpty() && state.name.trim().length < 2
+                val phoneError = state.phone.isNotEmpty() && !state.phone.matches(Regex("^\\+?[0-9\\s()-]{10,18}$"))
+                val canSave = state.isLoaded && state.name.trim().length >= 2 && !phoneError
+
                 OutlinedTextField(
                     value = state.name,
                     onValueChange = viewModel::onNameChange,
@@ -133,6 +137,10 @@ fun EditProfileScreen(
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                     shape = RoundedCornerShape(14.dp),
+                    isError = nameError,
+                    supportingText = if (nameError) {
+                        { Text("Минимум 2 символа") }
+                    } else null,
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = MaterialTheme.colorScheme.primary,
                         unfocusedBorderColor = TechGidTheme.extendedColors.cardBorder,
@@ -146,6 +154,10 @@ fun EditProfileScreen(
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
                     shape = RoundedCornerShape(14.dp),
+                    isError = phoneError,
+                    supportingText = if (phoneError) {
+                        { Text("Введите корректный номер телефона") }
+                    } else null,
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = MaterialTheme.colorScheme.primary,
                         unfocusedBorderColor = TechGidTheme.extendedColors.cardBorder,
@@ -167,7 +179,7 @@ fun EditProfileScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(52.dp),
-                    enabled = state.isLoaded,
+                    enabled = canSave,
                     shape = RoundedCornerShape(14.dp),
                 ) {
                     Text(

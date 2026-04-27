@@ -1,5 +1,11 @@
 package ru.techgid.presentation.screen.techspecs
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -23,6 +29,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
 import androidx.compose.material.icons.filled.Build
+import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Speed
@@ -32,13 +39,20 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.text.AnnotatedString
+import kotlinx.coroutines.launch
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -70,13 +84,20 @@ fun TechSpecsScreen(
 ) {
     val carName by viewModel.carName.collectAsState()
     val categories = remember(carName) { buildTechSpecs(carName) }
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+    val clipboardManager = LocalClipboardManager.current
 
     var selectedCategory by remember { mutableStateOf<TechSpecCategory?>(null) }
 
+    Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+        containerColor = MaterialTheme.colorScheme.background,
+    ) { paddingValues ->
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
+            .padding(paddingValues)
             .statusBarsPadding(),
     ) {
         Row(
@@ -108,28 +129,51 @@ fun TechSpecsScreen(
             }
         }
 
-        if (selectedCategory == null) {
-            LazyColumn(
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
-                items(categories) { category ->
-                    CategoryCard(
-                        category = category,
-                        onClick = { selectedCategory = category },
-                    )
+        AnimatedContent(
+            targetState = selectedCategory,
+            transitionSpec = {
+                if (targetState != null) {
+                    (slideInHorizontally { it / 3 } + fadeIn()) togetherWith
+                        (slideOutHorizontally { -it / 3 } + fadeOut())
+                } else {
+                    (slideInHorizontally { -it / 3 } + fadeIn()) togetherWith
+                        (slideOutHorizontally { it / 3 } + fadeOut())
                 }
-            }
-        } else {
-            LazyColumn(
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                items(selectedCategory!!.specs) { spec ->
-                    SpecRow(spec = spec)
+            },
+            label = "techspecs_content",
+        ) { category ->
+            if (category == null) {
+                LazyColumn(
+                    contentPadding = PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    items(categories) { cat ->
+                        CategoryCard(
+                            category = cat,
+                            onClick = { selectedCategory = cat },
+                        )
+                    }
+                }
+            } else {
+                LazyColumn(
+                    contentPadding = PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    items(category.specs) { spec ->
+                        SpecRow(
+                            spec = spec,
+                            onCopy = { text ->
+                                clipboardManager.setText(AnnotatedString(text))
+                                scope.launch {
+                                    snackbarHostState.showSnackbar("Скопировано: $text")
+                                }
+                            },
+                        )
+                    }
                 }
             }
         }
+    }
     }
 }
 
@@ -191,7 +235,7 @@ private fun CategoryCard(category: TechSpecCategory, onClick: () -> Unit) {
 }
 
 @Composable
-private fun SpecRow(spec: TechSpec) {
+private fun SpecRow(spec: TechSpec, onCopy: (String) -> Unit = {}) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
@@ -205,7 +249,6 @@ private fun SpecRow(spec: TechSpec) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
             ) {
                 Text(
                     text = spec.key,
@@ -223,6 +266,18 @@ private fun SpecRow(spec: TechSpec) {
                         text = "${spec.value} ${spec.unit}",
                         style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
                         color = MaterialTheme.colorScheme.primary,
+                    )
+                }
+                Spacer(Modifier.width(4.dp))
+                IconButton(
+                    onClick = { onCopy("${spec.key}: ${spec.value} ${spec.unit}") },
+                    modifier = Modifier.size(28.dp),
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.ContentCopy,
+                        contentDescription = "Копировать",
+                        modifier = Modifier.size(14.dp),
+                        tint = TechGidTheme.extendedColors.textTertiary,
                     )
                 }
             }

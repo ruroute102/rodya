@@ -30,6 +30,8 @@ import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.animation.core.animateIntAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -199,17 +201,17 @@ fun ProfileScreen(
             ) {
                 StatCard(
                     modifier = Modifier.weight(1f),
-                    value = "${state.favoritesCount}",
+                    value = state.favoritesCount,
                     label = "Избранное",
                 )
                 StatCard(
                     modifier = Modifier.weight(1f),
-                    value = "${state.historyCount}",
+                    value = state.historyCount,
                     label = "Записей ТО",
                 )
                 StatCard(
                     modifier = Modifier.weight(1f),
-                    value = "${state.offlineCount}",
+                    value = state.offlineCount,
                     label = "Офлайн",
                 )
             }
@@ -304,9 +306,14 @@ fun ProfileScreen(
 @Composable
 private fun StatCard(
     modifier: Modifier = Modifier,
-    value: String,
+    value: Int,
     label: String,
 ) {
+    val animatedValue by animateIntAsState(
+        targetValue = value,
+        animationSpec = tween(durationMillis = 600),
+        label = "stat_$label",
+    )
     Card(
         modifier = modifier,
         shape = RoundedCornerShape(14.dp),
@@ -323,7 +330,7 @@ private fun StatCard(
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Text(
-                text = value,
+                text = "$animatedValue",
                 style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
                 color = MaterialTheme.colorScheme.primary,
             )
