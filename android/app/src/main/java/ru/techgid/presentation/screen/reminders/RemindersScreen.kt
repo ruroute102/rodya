@@ -203,9 +203,10 @@ fun RemindersScreen(
                         )
                         Spacer(Modifier.height(6.dp))
                         Text(
-                            text = "Нажмите +, чтобы добавить напоминание о замене масла, фильтра или сезонных шин",
+                            text = "Нажмите +, чтобы добавить напоминание\nо замене масла, фильтра или сезонных шин",
                             style = MaterialTheme.typography.bodyMedium,
                             color = TechGidTheme.extendedColors.textTertiary,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                         )
                     }
                 }

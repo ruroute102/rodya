@@ -29,7 +29,6 @@ import androidx.compose.material.icons.filled.RadioButtonUnchecked
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -47,6 +46,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import ru.techgid.domain.model.DiagnosticResult
 import ru.techgid.presentation.components.PrimaryButton
+import ru.techgid.presentation.components.SkeletonDiagnosticResult
 import ru.techgid.presentation.components.SkeletonSymptomCard
 import ru.techgid.presentation.theme.TechGidColors
 import ru.techgid.presentation.theme.TechGidTheme
@@ -160,11 +160,13 @@ fun DiagnosticScreen(
         } else {
             // Results
             if (state.isLoading) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center,
+                LazyColumn(
+                    modifier = Modifier.weight(1f),
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    userScrollEnabled = false,
                 ) {
-                    CircularProgressIndicator()
+                    items(3) { SkeletonDiagnosticResult() }
                 }
             } else {
                 LazyColumn(

@@ -92,7 +92,7 @@ fun HomeScreen(
         ) {
             Column {
                 Text(
-                    text = "ТехГид",
+                    text = if (state.userName.isNotBlank()) "Привет, ${state.userName}!" else "ТехГид",
                     style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.Bold),
                     color = MaterialTheme.colorScheme.onBackground,
                 )
@@ -186,6 +186,40 @@ fun HomeScreen(
         }
 
         Spacer(Modifier.height(16.dp))
+
+        // Сводка: пробег, записей ТО, расходы
+        if (state.historyCount > 0) {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = TechGidTheme.extendedColors.cardBackground,
+                ),
+                shape = RoundedCornerShape(16.dp),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                border = BorderStroke(1.dp, TechGidTheme.extendedColors.cardBorder),
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 14.dp),
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                ) {
+                    MiniStat(
+                        value = "${formatKm(state.maxMileage)} км",
+                        label = "Пробег",
+                    )
+                    MiniStat(
+                        value = state.historyCount.toString(),
+                        label = "Записей",
+                    )
+                    MiniStat(
+                        value = "${formatKm(state.totalSpentRub)} ₽",
+                        label = "Расходы",
+                    )
+                }
+            }
+            Spacer(Modifier.height(12.dp))
+        }
 
         // Статус: последняя запись + ближайшее напоминание
         Row(
@@ -476,6 +510,26 @@ private fun PopularGuideCard(
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun MiniStat(
+    value: String,
+    label: String,
+) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(
+            text = value,
+            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+            color = MaterialTheme.colorScheme.primary,
+        )
+        Spacer(Modifier.height(2.dp))
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
+            color = TechGidTheme.extendedColors.textTertiary,
+        )
     }
 }
 

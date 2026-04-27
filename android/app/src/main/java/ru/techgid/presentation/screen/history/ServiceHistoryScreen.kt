@@ -259,23 +259,32 @@ fun ServiceHistoryScreen(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         modifier = Modifier.padding(32.dp),
                     ) {
-                        Icon(
-                            imageVector = Icons.Filled.History,
-                            contentDescription = null,
-                            tint = TechGidTheme.extendedColors.textTertiary.copy(alpha = 0.5f),
-                            modifier = Modifier.size(48.dp),
-                        )
-                        Spacer(Modifier.height(12.dp))
+                        Box(
+                            modifier = Modifier
+                                .size(72.dp)
+                                .clip(RoundedCornerShape(20.dp))
+                                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.History,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
+                                modifier = Modifier.size(40.dp),
+                            )
+                        }
+                        Spacer(Modifier.height(16.dp))
                         Text(
                             text = "Пока нет записей",
                             style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
                             color = MaterialTheme.colorScheme.onBackground,
                         )
-                        Spacer(Modifier.height(4.dp))
+                        Spacer(Modifier.height(6.dp))
                         Text(
-                            text = "Нажмите +, чтобы добавить запись о ТО",
+                            text = "Нажмите +, чтобы добавить первую запись\nо замене масла, фильтра или другом обслуживании",
                             style = MaterialTheme.typography.bodyMedium,
                             color = TechGidTheme.extendedColors.textTertiary,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                         )
                     }
                 }

@@ -32,7 +32,6 @@ import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.StarBorder
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -58,6 +57,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import ru.techgid.domain.model.GuideListItem
 import ru.techgid.presentation.components.DifficultyBadge
+import ru.techgid.presentation.components.SkeletonGuideCard
 import ru.techgid.presentation.theme.TechGidColors
 import ru.techgid.presentation.theme.TechGidTheme
 
@@ -193,11 +193,12 @@ fun SearchScreen(
                 }
             }
         } else if (state.isSearching) {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center,
+            LazyColumn(
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                userScrollEnabled = false,
             ) {
-                CircularProgressIndicator()
+                items(4) { SkeletonGuideCard() }
             }
         } else if (state.results.isEmpty()) {
             Box(

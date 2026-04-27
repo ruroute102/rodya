@@ -167,6 +167,49 @@ fun SkeletonGuideDetail(modifier: Modifier = Modifier) {
 }
 
 @Composable
+fun SkeletonDiagnosticResult(modifier: Modifier = Modifier) {
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = TechGidTheme.extendedColors.cardBackground,
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    ShimmerBox(modifier = Modifier.fillMaxWidth(0.7f), height = 18.dp)
+                    ShimmerBox(modifier = Modifier.fillMaxWidth(0.4f), height = 14.dp)
+                }
+                Spacer(Modifier.width(12.dp))
+                ShimmerBox(modifier = Modifier.width(48.dp), height = 28.dp, cornerRadius = 8.dp)
+            }
+            ShimmerBox(
+                modifier = Modifier.fillMaxWidth(),
+                height = 6.dp,
+                cornerRadius = 3.dp,
+            )
+            Spacer(Modifier.height(4.dp))
+            ShimmerBox(modifier = Modifier.fillMaxWidth(0.3f), height = 14.dp)
+            ShimmerBox(modifier = Modifier.fillMaxWidth(0.85f), height = 14.dp)
+            ShimmerBox(modifier = Modifier.fillMaxWidth(0.75f), height = 14.dp)
+        }
+    }
+}
+
+@Composable
 fun SkeletonSymptomCard(modifier: Modifier = Modifier) {
     Card(
         modifier = modifier.fillMaxWidth(),

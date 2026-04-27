@@ -29,6 +29,7 @@ data class HomePopularGuide(
 data class HomeUiState(
     val carName: String = "Audi Q3 2011 · 2.0 TFSI",
     val configId: Int = 1,
+    val userName: String = "",
     val favoritesCount: Int = 0,
     val historyCount: Int = 0,
     val totalSpentRub: Int = 0,
@@ -74,6 +75,7 @@ class HomeViewModel @Inject constructor(
         ) { name, configId, favCount, histCount, total ->
             CarInfo(name, configId, favCount, histCount, total)
         }
+        val userNameFlow = prefs.profileName
         val activityFlow = combine(
             history.observeMaxMileage(),
             history.observeAll(),
@@ -82,10 +84,11 @@ class HomeViewModel @Inject constructor(
             Activity(maxKm, records.firstOrNull(), reminderList.firstOrNull { !it.isDone })
         }
         viewModelScope.launch {
-            combine(carInfoFlow, activityFlow) { info, activity ->
+            combine(carInfoFlow, activityFlow, userNameFlow) { info, activity, name ->
                 HomeUiState(
                     carName = info.carName,
                     configId = info.configId,
+                    userName = name,
                     favoritesCount = info.favoritesCount,
                     historyCount = info.historyCount,
                     totalSpentRub = info.totalSpentRub,

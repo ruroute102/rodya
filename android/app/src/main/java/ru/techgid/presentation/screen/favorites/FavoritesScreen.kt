@@ -143,9 +143,10 @@ fun FavoritesScreen(
                     )
                     Spacer(Modifier.height(6.dp))
                     Text(
-                        text = "Откройте инструкцию и нажмите звёздочку, чтобы добавить её сюда",
+                        text = "Откройте инструкцию и нажмите звёздочку,\nчтобы добавить её сюда",
                         style = MaterialTheme.typography.bodyMedium,
                         color = TechGidTheme.extendedColors.textTertiary,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                     )
                 }
             }
