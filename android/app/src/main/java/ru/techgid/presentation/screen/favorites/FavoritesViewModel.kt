@@ -3,11 +3,12 @@ package ru.techgid.presentation.screen.favorites
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import ru.techgid.data.local.entity.FavoriteEntity
@@ -18,6 +19,10 @@ data class FavoritesUiState(
     val items: List<FavoriteEntity> = emptyList(),
     val isLoading: Boolean = true,
 )
+
+sealed interface FavoritesEvent {
+    data class Removed(val favorite: FavoriteEntity) : FavoritesEvent
+}
 
 @HiltViewModel
 class FavoritesViewModel @Inject constructor(
@@ -32,7 +37,20 @@ class FavoritesViewModel @Inject constructor(
             initialValue = FavoritesUiState(),
         )
 
+    private val _events = Channel<FavoritesEvent>(Channel.BUFFERED)
+    val events = _events.receiveAsFlow()
+
     fun remove(guideId: Int) {
-        viewModelScope.launch { favorites.remove(guideId) }
+        viewModelScope.launch {
+            val target = favorites.observeAll().first().firstOrNull { it.guideId == guideId }
+            favorites.remove(guideId)
+            if (target != null) {
+                _events.trySend(FavoritesEvent.Removed(target))
+            }
+        }
+    }
+
+    fun restore(favorite: FavoriteEntity) {
+        viewModelScope.launch { favorites.restore(favorite) }
     }
 }

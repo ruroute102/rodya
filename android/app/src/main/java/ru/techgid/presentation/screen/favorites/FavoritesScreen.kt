@@ -30,10 +30,16 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -50,10 +56,32 @@ fun FavoritesScreen(
     onGuideClick: (Int) -> Unit = {},
 ) {
     val state by viewModel.uiState.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
 
+    LaunchedEffect(Unit) {
+        viewModel.events.collect { event ->
+            when (event) {
+                is FavoritesEvent.Removed -> {
+                    val result = snackbarHostState.showSnackbar(
+                        message = "Убрано из избранного",
+                        actionLabel = "Отменить",
+                    )
+                    if (result == SnackbarResult.ActionPerformed) {
+                        viewModel.restore(event.favorite)
+                    }
+                }
+            }
+        }
+    }
+
+    Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+        containerColor = MaterialTheme.colorScheme.background,
+    ) { paddingValues ->
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .padding(paddingValues)
             .background(MaterialTheme.colorScheme.background)
             .statusBarsPadding(),
     ) {
@@ -135,6 +163,7 @@ fun FavoritesScreen(
                 }
             }
         }
+    }
     }
 }
 

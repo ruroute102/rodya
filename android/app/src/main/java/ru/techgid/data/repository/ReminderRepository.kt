@@ -29,4 +29,6 @@ class ReminderRepository @Inject constructor(
     }
 
     suspend fun delete(id: Long) = dao.deleteById(id)
+
+    suspend fun restore(reminder: ReminderEntity): Long = dao.insert(reminder)
 }

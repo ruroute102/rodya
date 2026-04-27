@@ -3,11 +3,13 @@ package ru.techgid.presentation.screen.history
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import ru.techgid.data.local.entity.ServiceRecordEntity
@@ -31,6 +33,10 @@ data class ServiceHistoryUiState(
     val sortMode: ServiceSortMode = ServiceSortMode.DATE_DESC,
 )
 
+sealed interface ServiceHistoryEvent {
+    data class Deleted(val record: ServiceRecordEntity) : ServiceHistoryEvent
+}
+
 @HiltViewModel
 class ServiceHistoryViewModel @Inject constructor(
     private val repository: ServiceRecordRepository,
@@ -38,6 +44,9 @@ class ServiceHistoryViewModel @Inject constructor(
 
     private val _uiState = MutableStateFlow(ServiceHistoryUiState())
     val uiState: StateFlow<ServiceHistoryUiState> = _uiState.asStateFlow()
+
+    private val _events = Channel<ServiceHistoryEvent>(Channel.BUFFERED)
+    val events = _events.receiveAsFlow()
 
     init {
         observe()
@@ -143,6 +152,14 @@ class ServiceHistoryViewModel @Inject constructor(
     }
 
     fun delete(id: Long) {
-        viewModelScope.launch { repository.delete(id) }
+        viewModelScope.launch {
+            val target = _uiState.value.records.firstOrNull { it.id == id }
+            repository.delete(id)
+            if (target != null) _events.trySend(ServiceHistoryEvent.Deleted(target))
+        }
+    }
+
+    fun restore(record: ServiceRecordEntity) {
+        viewModelScope.launch { repository.add(record) }
     }
 }

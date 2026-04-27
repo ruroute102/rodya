@@ -39,4 +39,6 @@ class FavoriteRepository @Inject constructor(
     }
 
     suspend fun remove(guideId: Int) = dao.remove(guideId)
+
+    suspend fun restore(favorite: FavoriteEntity) = dao.add(favorite)
 }

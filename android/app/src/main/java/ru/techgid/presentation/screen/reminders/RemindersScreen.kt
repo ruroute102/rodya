@@ -42,10 +42,14 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
@@ -75,9 +79,26 @@ fun RemindersScreen(
     onBack: () -> Unit = {},
 ) {
     val state by viewModel.uiState.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
     var showAddSheet by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState()
     var deleteTargetId by remember { mutableLongStateOf(-1L) }
+
+    LaunchedEffect(Unit) {
+        viewModel.events.collect { event ->
+            when (event) {
+                is RemindersEvent.Deleted -> {
+                    val result = snackbarHostState.showSnackbar(
+                        message = "Напоминание удалено",
+                        actionLabel = "Отменить",
+                    )
+                    if (result == SnackbarResult.ActionPerformed) {
+                        viewModel.restore(event.reminder)
+                    }
+                }
+            }
+        }
+    }
 
     if (deleteTargetId >= 0L) {
         AlertDialog(
@@ -101,6 +122,7 @@ fun RemindersScreen(
     }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         floatingActionButton = {
             FloatingActionButton(
                 onClick = { showAddSheet = true },
