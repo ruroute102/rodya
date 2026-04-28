@@ -19,6 +19,7 @@ import ru.techgid.presentation.components.BottomNavBar
 import ru.techgid.presentation.screen.auth.AuthScreen
 import ru.techgid.presentation.screen.carselect.CarSelectScreen
 import ru.techgid.presentation.screen.catalog.CatalogScreen
+import ru.techgid.presentation.screen.comparison.ComparisonScreen
 import ru.techgid.presentation.screen.consumables.ConsumablesScreen
 import ru.techgid.presentation.screen.diagnostic.DiagnosticScreen
 import ru.techgid.presentation.screen.editprofile.EditProfileScreen
@@ -120,6 +121,7 @@ fun TechGidNavHost() {
                     onServiceHistory = { navController.navigate(NavRoute.ServiceHistory.route) },
                     onReminders = { navController.navigate(NavRoute.Reminders.route) },
                     onConsumables = { navController.navigate(NavRoute.Consumables.route) },
+                    onComparison = { navController.navigate(NavRoute.Comparison.route) },
                     onGuideClick = { guideId ->
                         navController.navigate(NavRoute.GuideDetail.create(guideId))
                     },
@@ -284,6 +286,11 @@ fun TechGidNavHost() {
             // Consumables calculator
             composable(NavRoute.Consumables.route) {
                 ConsumablesScreen(onBack = { navController.popBackStack() })
+            }
+
+            // Parts comparison
+            composable(NavRoute.Comparison.route) {
+                ComparisonScreen(onBack = { navController.popBackStack() })
             }
         }
     }

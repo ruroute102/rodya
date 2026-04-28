@@ -68,6 +68,7 @@ data class GuideStep(
     val variations: List<StepVariation> = emptyList(),
     val checks: List<StepCheck> = emptyList(),
     val commentsCount: Int = 0,
+    val waitTimeSeconds: Int? = null,
 )
 
 data class StepTool(

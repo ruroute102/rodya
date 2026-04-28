@@ -22,6 +22,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
 import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.Calculate
+import androidx.compose.material.icons.filled.CompareArrows
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.History
@@ -71,6 +72,7 @@ fun HomeScreen(
     onServiceHistory: () -> Unit = {},
     onReminders: () -> Unit = {},
     onConsumables: () -> Unit = {},
+    onComparison: () -> Unit = {},
     onGuideClick: (Int) -> Unit = {},
 ) {
     val state by viewModel.uiState.collectAsState()
@@ -283,6 +285,11 @@ fun HomeScreen(
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             QuickActionCard(Modifier.weight(1f), Icons.Filled.Calculate, "Расходники", "Объёмы и нормы", onConsumables)
             QuickActionCard(Modifier.weight(1f), Icons.Filled.Notifications, "Напоминания", "ТО по сроку", onReminders)
+        }
+        Spacer(Modifier.height(12.dp))
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            QuickActionCard(Modifier.weight(1f), Icons.Filled.CompareArrows, "Сравнить", "OEM vs аналоги", onComparison)
+            Spacer(Modifier.weight(1f))
         }
 
         Spacer(Modifier.height(24.dp))

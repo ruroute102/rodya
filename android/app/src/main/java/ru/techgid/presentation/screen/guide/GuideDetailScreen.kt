@@ -34,14 +34,24 @@ import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Inventory2
+import androidx.compose.material.icons.filled.Pause
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Replay
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -262,6 +272,21 @@ fun GuideDetailScreen(
                             text = currentStep.description,
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+
+                // Step timer
+                if (state.hasTimer) {
+                    item {
+                        StepTimerCard(
+                            totalSeconds = state.timerTotalSeconds,
+                            remainingSeconds = state.timerRemainingSeconds,
+                            isRunning = state.timerRunning,
+                            isFinished = state.timerFinished,
+                            onStart = { viewModel.startTimer() },
+                            onPause = { viewModel.pauseTimer() },
+                            onReset = { viewModel.resetTimer() },
                         )
                     }
                 }
@@ -675,6 +700,150 @@ private fun CommentItem(comment: Comment) {
             comment.replies.forEach { reply ->
                 Spacer(Modifier.height(8.dp))
                 CommentItem(comment = reply)
+            }
+        }
+    }
+}
+
+@Composable
+private fun StepTimerCard(
+    totalSeconds: Int,
+    remainingSeconds: Int,
+    isRunning: Boolean,
+    isFinished: Boolean,
+    onStart: () -> Unit,
+    onPause: () -> Unit,
+    onReset: () -> Unit,
+) {
+    val progress = if (totalSeconds > 0) remainingSeconds.toFloat() / totalSeconds else 0f
+    val animatedProgress by animateFloatAsState(
+        targetValue = progress,
+        animationSpec = tween(durationMillis = 300),
+        label = "timer_progress",
+    )
+
+    val timerColor by animateColorAsState(
+        targetValue = when {
+            isFinished -> TechGidColors.DifficultyEasy
+            remainingSeconds <= 10 && isRunning -> TechGidColors.WarningCaution
+            else -> MaterialTheme.colorScheme.primary
+        },
+        label = "timer_color",
+    )
+
+    val minutes = remainingSeconds / 60
+    val seconds = remainingSeconds % 60
+    val timeText = "%d:%02d".format(minutes, seconds)
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = timerColor.copy(alpha = 0.08f),
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(36.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(timerColor.copy(alpha = 0.15f)),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        Icons.Filled.Timer,
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp),
+                        tint = timerColor,
+                    )
+                }
+                Spacer(Modifier.width(12.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = if (isFinished) "Готово!" else "Ожидание",
+                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+                    Text(
+                        text = if (isFinished) "Время истекло — можно продолжать"
+                        else "Подождите перед следующим действием",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = TechGidTheme.extendedColors.textTertiary,
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(12.dp))
+
+            Text(
+                text = timeText,
+                style = MaterialTheme.typography.displaySmall.copy(
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 2.sp,
+                ),
+                color = timerColor,
+                modifier = Modifier.align(Alignment.CenterHorizontally),
+            )
+
+            Spacer(Modifier.height(8.dp))
+
+            LinearProgressIndicator(
+                progress = { animatedProgress },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(6.dp)
+                    .clip(RoundedCornerShape(3.dp)),
+                color = timerColor,
+                trackColor = timerColor.copy(alpha = 0.15f),
+            )
+
+            Spacer(Modifier.height(12.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                if (!isFinished) {
+                    FilledIconButton(
+                        onClick = if (isRunning) onPause else onStart,
+                        modifier = Modifier.size(48.dp),
+                        colors = IconButtonDefaults.filledIconButtonColors(
+                            containerColor = timerColor,
+                            contentColor = MaterialTheme.colorScheme.onPrimary,
+                        ),
+                    ) {
+                        Icon(
+                            if (isRunning) Icons.Filled.Pause else Icons.Filled.PlayArrow,
+                            contentDescription = if (isRunning) "Пауза" else "Старт",
+                            modifier = Modifier.size(24.dp),
+                        )
+                    }
+                }
+                if (!isRunning && remainingSeconds < totalSeconds) {
+                    Spacer(Modifier.width(12.dp))
+                    FilledIconButton(
+                        onClick = onReset,
+                        modifier = Modifier.size(48.dp),
+                        colors = IconButtonDefaults.filledIconButtonColors(
+                            containerColor = TechGidTheme.extendedColors.cardBorder,
+                            contentColor = MaterialTheme.colorScheme.onSurface,
+                        ),
+                    ) {
+                        Icon(
+                            Icons.Filled.Replay,
+                            contentDescription = "Сбросить",
+                            modifier = Modifier.size(22.dp),
+                        )
+                    }
+                }
             }
         }
     }

@@ -4,6 +4,8 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -28,11 +30,16 @@ data class GuideDetailUiState(
     val snackbarMessage: String? = null,
     val doneStepIds: Set<Int> = emptySet(),
     val error: String? = null,
+    val timerTotalSeconds: Int = 0,
+    val timerRemainingSeconds: Int = 0,
+    val timerRunning: Boolean = false,
+    val timerFinished: Boolean = false,
 ) {
     val totalSteps: Int get() = guideDetail?.steps?.size ?: 0
     val currentStep get() = guideDetail?.steps?.getOrNull(currentStepIndex)
     val canGoNext: Boolean get() = currentStepIndex < totalSteps - 1
     val canGoPrev: Boolean get() = currentStepIndex > 0
+    val hasTimer: Boolean get() = (currentStep?.waitTimeSeconds ?: 0) > 0
 }
 
 @HiltViewModel
@@ -48,6 +55,8 @@ class GuideDetailViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(GuideDetailUiState(isLoading = true))
     val uiState: StateFlow<GuideDetailUiState> = _uiState.asStateFlow()
 
+    private var timerJob: Job? = null
+
     init {
         loadGuideDetail()
         checkOfflineStatus()
@@ -61,6 +70,7 @@ class GuideDetailViewModel @Inject constructor(
             try {
                 val detail = guideRepository.getGuide(guideId)
                 _uiState.update { it.copy(guideDetail = detail, isLoading = false) }
+                initTimerForCurrentStep()
                 loadComments()
             } catch (e: Exception) {
                 _uiState.update {
@@ -139,7 +149,9 @@ class GuideDetailViewModel @Inject constructor(
     fun nextStep() {
         val state = _uiState.value
         if (state.canGoNext) {
+            stopTimer()
             _uiState.update { it.copy(currentStepIndex = state.currentStepIndex + 1) }
+            initTimerForCurrentStep()
             loadComments()
         }
     }
@@ -147,8 +159,68 @@ class GuideDetailViewModel @Inject constructor(
     fun prevStep() {
         val state = _uiState.value
         if (state.canGoPrev) {
+            stopTimer()
             _uiState.update { it.copy(currentStepIndex = state.currentStepIndex - 1) }
+            initTimerForCurrentStep()
             loadComments()
+        }
+    }
+
+    private fun initTimerForCurrentStep() {
+        val step = _uiState.value.currentStep
+        val wait = step?.waitTimeSeconds ?: 0
+        _uiState.update {
+            it.copy(
+                timerTotalSeconds = wait,
+                timerRemainingSeconds = wait,
+                timerRunning = false,
+                timerFinished = false,
+            )
+        }
+    }
+
+    fun startTimer() {
+        val state = _uiState.value
+        if (state.timerRunning || state.timerRemainingSeconds <= 0) return
+        _uiState.update { it.copy(timerRunning = true, timerFinished = false) }
+        timerJob = viewModelScope.launch {
+            while (_uiState.value.timerRemainingSeconds > 0 && _uiState.value.timerRunning) {
+                delay(1_000)
+                _uiState.update { it.copy(timerRemainingSeconds = it.timerRemainingSeconds - 1) }
+            }
+            if (_uiState.value.timerRemainingSeconds <= 0) {
+                _uiState.update {
+                    it.copy(
+                        timerRunning = false,
+                        timerFinished = true,
+                        snackbarMessage = "Время ожидания истекло!",
+                    )
+                }
+            }
+        }
+    }
+
+    fun pauseTimer() {
+        _uiState.update { it.copy(timerRunning = false) }
+        timerJob?.cancel()
+        timerJob = null
+    }
+
+    fun resetTimer() {
+        stopTimer()
+        _uiState.update {
+            it.copy(
+                timerRemainingSeconds = it.timerTotalSeconds,
+                timerFinished = false,
+            )
+        }
+    }
+
+    private fun stopTimer() {
+        timerJob?.cancel()
+        timerJob = null
+        _uiState.update {
+            it.copy(timerRunning = false)
         }
     }
 

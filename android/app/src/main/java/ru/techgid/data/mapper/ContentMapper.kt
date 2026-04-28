@@ -91,6 +91,7 @@ fun GuideStepDto.toDomain() = GuideStep(
     variations = variations.map { it.toDomain() },
     checks = checks.map { it.toDomain() },
     commentsCount = commentsCount,
+    waitTimeSeconds = waitTimeSeconds,
 )
 
 fun GuidePrecautionDto.toDomain() = GuidePrecaution(

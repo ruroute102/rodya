@@ -113,6 +113,7 @@ data class GuideStepDto(
     val variations: List<StepVariationDto> = emptyList(),
     val checks: List<StepCheckDto> = emptyList(),
     @Json(name = "comments_count") val commentsCount: Int = 0,
+    @Json(name = "wait_time_seconds") val waitTimeSeconds: Int? = null,
 )
 
 @JsonClass(generateAdapter = true)

@@ -297,6 +297,7 @@ class GuideRepositoryImpl @Inject constructor(
                             StepCheck("Проверьте, что зажигание выключено.", false),
                         ),
                         commentsCount = 3,
+                        waitTimeSeconds = 60,
                     ),
                     GuideStep(
                         id = 2, stepNumber = 2,
@@ -431,6 +432,7 @@ class GuideRepositoryImpl @Inject constructor(
                             StepConsumable("Прокладка сливной пробки", "N 013 815 7", "1 шт"),
                         ),
                         checks = listOf(StepCheck("Масло полностью слито (подождите 10-15 минут).", false)),
+                        waitTimeSeconds = 900,
                     ),
                     GuideStep(
                         id = 12, stepNumber = 3,
@@ -848,6 +850,7 @@ class GuideRepositoryImpl @Inject constructor(
                             StepWarning("caution", WarningSeverity.CAUTION, "Нанесите проникающую смазку за 10-15 минут до откручивания."),
                         ),
                         checks = listOf(StepCheck("Старая стойка снята.", false)),
+                        waitTimeSeconds = 600,
                     ),
                     GuideStep(
                         id = 82, stepNumber = 3,
