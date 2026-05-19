@@ -512,8 +512,9 @@ private fun addLoftedBody(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Audi Q3 2011 (8U) — low-poly procedural mesh matching the real car's
-// proportions: L=4.39m, W=1.83m, H=1.58m, WB=2.60m.
+// Audi Q3 2011 (8U) — low-poly procedural mesh matching the factory
+// blueprint proportions: L=4.385m, W=1.831m, H=1.590m without roof antenna,
+// WB=2.603m, front/rear overhangs 0.901/0.881m, track 1.571/1.575m.
 // Coordinate origin at ground-centre of wheelbase.
 // ─────────────────────────────────────────────────────────────────────────────
 fun buildAudiQ3Mesh(): Mesh {
@@ -534,14 +535,14 @@ fun buildAudiQ3Mesh(): Mesh {
     val roofRail  = Color(0xFFAAAAAA)
 
     // ── Key geometry ─────────────────────────────────────────────────────
-    val fa   =  1.30f
-    val ra   = -1.30f
-    val wx   =  0.785f
+    val fa   =  1.3015f
+    val ra   = -1.3015f
+    val wx   =  0.7865f
     val wr   =  0.330f
     val ww   =  0.230f
     val belt =  0.87f
     val wtop =  1.37f
-    val roof =  1.58f
+    val roof =  1.59f
 
     // ── 1. Body shell (profile-lofted smooth surface) ───────────────────
     val profiles = listOf(

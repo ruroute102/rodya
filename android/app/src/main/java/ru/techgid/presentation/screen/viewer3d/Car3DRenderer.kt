@@ -14,7 +14,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -22,7 +21,6 @@ import androidx.compose.runtime.withFrameMillis
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.DrawScope
@@ -86,12 +84,9 @@ fun Car3DRenderer(
         Vec3(lightDirN.x + viewDirN.x, lightDirN.y + viewDirN.y, lightDirN.z + viewDirN.z).normalized()
     }
 
-    var lastTouchMs by remember { mutableLongStateOf(System.currentTimeMillis()) }
-
     LaunchedEffect(Unit) {
         while (isActive) {
             withFrameMillis {
-                val now = System.currentTimeMillis()
                 if (!interactive) {
                     cameraState.yaw += 0.003f
                 }
@@ -124,7 +119,6 @@ fun Car3DRenderer(
             if (interactive) {
                 m.pointerInput(Unit) {
                     detectTransformGestures { _, pan, zoomChange, _ ->
-                        lastTouchMs = System.currentTimeMillis()
                         cameraState.yaw -= pan.x * ORBIT_YAW_SENSITIVITY
                         cameraState.pitch = (cameraState.pitch + pan.y * ORBIT_PITCH_SENSITIVITY)
                             .coerceIn(MIN_ORBIT_PITCH, MAX_ORBIT_PITCH)
