@@ -1,7 +1,5 @@
 package ru.techgid.presentation.screen.viewer3d
 
-import android.graphics.Paint
-import android.graphics.Typeface
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -21,7 +19,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameMillis
-import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -30,11 +27,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.nativeCanvas
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.isActive
 import kotlin.math.PI
 import kotlin.math.abs
@@ -98,7 +92,7 @@ fun Car3DRenderer(
         while (isActive) {
             withFrameMillis {
                 val now = System.currentTimeMillis()
-                if (!interactive || now - lastTouchMs > 2500L) {
+                if (!interactive) {
                     cameraState.yaw += 0.003f
                 }
             }
@@ -131,10 +125,10 @@ fun Car3DRenderer(
                 m.pointerInput(Unit) {
                     detectTransformGestures { _, pan, zoomChange, _ ->
                         lastTouchMs = System.currentTimeMillis()
-                        cameraState.yaw += pan.x * 0.009f
-                        cameraState.pitch = (cameraState.pitch - pan.y * 0.009f)
-                            .coerceIn((-PI / 2 + 0.1).toFloat(), (PI / 2 - 0.1).toFloat())
-                        cameraState.zoom = (cameraState.zoom * zoomChange).coerceIn(0.4f, 2.5f)
+                        cameraState.yaw -= pan.x * ORBIT_YAW_SENSITIVITY
+                        cameraState.pitch = (cameraState.pitch + pan.y * ORBIT_PITCH_SENSITIVITY)
+                            .coerceIn(MIN_ORBIT_PITCH, MAX_ORBIT_PITCH)
+                        cameraState.zoom = (cameraState.zoom * zoomChange).coerceIn(0.55f, 2.7f)
                     }
                 }
             } else m
@@ -388,6 +382,11 @@ private val SEMI_GHOST_IDS = setOf(
     PartId.REAR_SEAT,
 )
 
+private const val ORBIT_YAW_SENSITIVITY = 0.0065f
+private const val ORBIT_PITCH_SENSITIVITY = 0.0055f
+private const val MIN_ORBIT_PITCH = -1.12f
+private const val MAX_ORBIT_PITCH = 0.42f
+
 private data class VertexProjected(
     val screen: Offset,
     val z: Float,
@@ -446,73 +445,24 @@ private fun DrawScope.drawRepairCallout(
         center = anchor,
     )
 
-    val titlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = if (ghostMode) Color.White.toArgb() else Color(0xFF16202B).toArgb()
-        textSize = 13.sp.toPx()
-        typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-    }
-    val subtitlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = if (ghostMode) Color(0xFFC8D2DE).toArgb() else Color(0xFF5D6875).toArgb()
-        textSize = 10.sp.toPx()
-    }
-
-    val safeSubtitle = subtitle?.takeIf { it.isNotBlank() }
-    val horizontalPadding = 13.dp.toPx()
-    val verticalPadding = 10.dp.toPx()
-    val titleWidth = titlePaint.measureText(title)
-    val subtitleWidth = safeSubtitle?.let { subtitlePaint.measureText(it) } ?: 0f
-    val labelWidth = max(titleWidth, subtitleWidth) + horizontalPadding * 2f
-    val labelHeight = if (safeSubtitle != null) 54.dp.toPx() else 38.dp.toPx()
-
-    val placeRight = anchor.x < canvasSize.width * 0.56f
-    val desiredLeft = if (placeRight) anchor.x + 54.dp.toPx() else anchor.x - labelWidth - 54.dp.toPx()
-    val labelLeft = desiredLeft.coerceIn(12.dp.toPx(), canvasSize.width - labelWidth - 12.dp.toPx())
-    val labelTop = (anchor.y - labelHeight * 0.72f)
-        .coerceIn(12.dp.toPx(), canvasSize.height - labelHeight - 12.dp.toPx())
-    val labelCenterY = labelTop + labelHeight / 2f
-    val labelEdgeX = if (placeRight) labelLeft else labelLeft + labelWidth
+    val guideLength = 34.dp.toPx()
+    val guideEnd = Offset(
+        x = (anchor.x + if (anchor.x < canvasSize.width * 0.5f) guideLength else -guideLength)
+            .coerceIn(12.dp.toPx(), canvasSize.width - 12.dp.toPx()),
+        y = (anchor.y - guideLength * 0.45f).coerceIn(12.dp.toPx(), canvasSize.height - 12.dp.toPx()),
+    )
 
     drawLine(
-        color = accentColor.copy(alpha = 0.78f),
+        color = accentColor.copy(alpha = 0.38f),
         start = anchor,
-        end = Offset(labelEdgeX, labelCenterY),
-        strokeWidth = 2.dp.toPx(),
+        end = guideEnd,
+        strokeWidth = 1.4.dp.toPx(),
     )
     drawCircle(
-        color = accentColor,
-        radius = 3.dp.toPx(),
-        center = Offset(labelEdgeX, labelCenterY),
+        color = accentColor.copy(alpha = 0.72f),
+        radius = 2.5.dp.toPx(),
+        center = guideEnd,
     )
-
-    drawRoundRect(
-        color = if (ghostMode) Color(0xE61B222E) else Color(0xEEFFFFFF),
-        topLeft = Offset(labelLeft, labelTop),
-        size = Size(labelWidth, labelHeight),
-        cornerRadius = CornerRadius(12.dp.toPx(), 12.dp.toPx()),
-    )
-    drawRoundRect(
-        color = accentColor.copy(alpha = 0.48f),
-        topLeft = Offset(labelLeft, labelTop),
-        size = Size(labelWidth, labelHeight),
-        cornerRadius = CornerRadius(12.dp.toPx(), 12.dp.toPx()),
-        style = Stroke(width = 1.dp.toPx()),
-    )
-
-    val nativeCanvas = drawContext.canvas.nativeCanvas
-    nativeCanvas.drawText(
-        title,
-        labelLeft + horizontalPadding,
-        labelTop + verticalPadding + 13.sp.toPx(),
-        titlePaint,
-    )
-    if (safeSubtitle != null) {
-        nativeCanvas.drawText(
-            safeSubtitle,
-            labelLeft + horizontalPadding,
-            labelTop + verticalPadding + 31.sp.toPx(),
-            subtitlePaint,
-        )
-    }
 }
 
 private fun perspectiveProject(
