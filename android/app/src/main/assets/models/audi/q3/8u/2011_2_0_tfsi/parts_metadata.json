@@ -1,0 +1,75 @@
+{
+  "carId": "audi_q3_8u_2011_2_0_tfsi",
+  "displayName": "Audi Q3 8U 2011 2.0 TFSI",
+  "coordinateSystem": {
+    "up": "Y",
+    "front": "-Z",
+    "unit": "meter"
+  },
+  "materials": {
+    "xrayShell": {
+      "baseColor": "#DCEBFA",
+      "alpha": 0.28,
+      "roughness": 0.52,
+      "notes": "Body shell should stay readable but transparent enough to show service nodes."
+    },
+    "blueHighlight": {
+      "baseColor": "#25B7FF",
+      "emissive": "#149DFF",
+      "emissiveStrength": 1.6
+    },
+    "orangeHighlight": {
+      "baseColor": "#FF8A00",
+      "emissive": "#FF6A00",
+      "emissiveStrength": 1.4
+    }
+  },
+  "parts": [
+    {
+      "id": "body",
+      "title": "Полупрозрачный кузов",
+      "meshNames": ["body", "body_shell", "doors", "fenders", "hood", "trunk"],
+      "materialRole": "xrayShell"
+    },
+    {
+      "id": "rear_seat",
+      "title": "Заднее сиденье",
+      "meshNames": ["rear_seat", "rear_seat_cushion", "seat_back_rear"],
+      "materialRole": "interior",
+      "canHide": true
+    },
+    {
+      "id": "fuel_tank",
+      "title": "Топливный бак",
+      "meshNames": ["fuel_tank", "tank"],
+      "materialRole": "xrayInternal"
+    },
+    {
+      "id": "fuel_pump_cover",
+      "title": "Крышка доступа топливного насоса",
+      "meshNames": ["fuel_access_cover", "fuel_pump_cover", "tank_cover"],
+      "materialRole": "blueHighlight"
+    },
+    {
+      "id": "fuel_pump",
+      "title": "Модуль топливного насоса",
+      "meshNames": ["fuel_pump", "fuel_pump_module", "sea_pump"],
+      "materialRole": "blueHighlight",
+      "access": "Под задним сиденьем"
+    },
+    {
+      "id": "oil_filter",
+      "title": "Масляный фильтр",
+      "meshNames": ["oil_filter", "filter_oil"],
+      "materialRole": "orangeHighlight",
+      "access": "Сверху в моторном отсеке"
+    },
+    {
+      "id": "transmission",
+      "title": "Коробка передач DSG DQ250",
+      "meshNames": ["transmission", "gearbox", "dsg", "dq250"],
+      "materialRole": "orangeHighlight",
+      "access": "Снизу автомобиля"
+    }
+  ]
+}

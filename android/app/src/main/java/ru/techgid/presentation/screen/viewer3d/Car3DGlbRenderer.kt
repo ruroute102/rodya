@@ -14,6 +14,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -31,10 +32,15 @@ import io.github.sceneview.rememberEnvironmentLoader
 import io.github.sceneview.rememberMaterialLoader
 import io.github.sceneview.rememberModelLoader
 import io.github.sceneview.rememberNodes
+import kotlin.math.cos
+import kotlin.math.sin
 
 @Composable
 fun Car3DGlbRenderer(
     modelAssetPath: String,
+    cameraState: Car3DCameraState,
+    assetSpec: ResolvedCarModelAsset?,
+    options: RenderOptions,
     modifier: Modifier = Modifier,
     bgColor: Color = Color(0xFF0A1020),
 ) {
@@ -48,8 +54,26 @@ fun Car3DGlbRenderer(
         lookAt(Position(0f, 0f, 0f))
     }
 
+    LaunchedEffect(
+        cameraState.yaw,
+        cameraState.pitch,
+        cameraState.zoom,
+        cameraState.focus,
+    ) {
+        val distance = 4.2f / cameraState.zoom
+        val horizontal = cos(cameraState.pitch) * distance
+        val focus = cameraState.focus
+        cameraNode.position = Position(
+            x = focus.x + sin(cameraState.yaw) * horizontal,
+            y = focus.y + sin(-cameraState.pitch) * distance + 0.45f,
+            z = focus.z + cos(cameraState.yaw) * horizontal,
+        )
+        cameraNode.lookAt(Position(focus.x, focus.y + 0.35f, focus.z))
+    }
+
     var modelLoaded by remember { mutableStateOf(false) }
     var modelError by remember { mutableStateOf(false) }
+    var modelNode by remember { mutableStateOf<ModelNode?>(null) }
 
     val childNodes = rememberNodes {
         val result = runCatching {
@@ -61,10 +85,23 @@ fun Car3DGlbRenderer(
             ).apply {
                 isEditable = true
             }
+            modelNode = node
             add(node)
         }
         modelLoaded = result.isSuccess
         modelError = result.isFailure
+    }
+
+    LaunchedEffect(modelNode, options.hiddenPartIds, assetSpec?.spec?.carId) {
+        val node = modelNode ?: return@LaunchedEffect
+        val hiddenGroups = assetSpec?.spec?.partGroups
+            ?.filter { it.partId in options.hiddenPartIds }
+            .orEmpty()
+
+        node.renderableNodes.forEach { renderableNode ->
+            val nodeName = renderableNode.name.orEmpty()
+            renderableNode.isVisible = hiddenGroups.none { it.matchesMeshName(nodeName) }
+        }
     }
 
     Box(
@@ -94,7 +131,7 @@ fun Car3DGlbRenderer(
                 )
                 Spacer(Modifier.height(12.dp))
                 Text(
-                    text = "Загрузка модели…",
+                    text = "Загрузка модели...",
                     style = MaterialTheme.typography.bodySmall,
                     color = Color(0xFF8899AA),
                 )
@@ -109,4 +146,10 @@ fun Car3DGlbRenderer(
             )
         }
     }
+}
+
+private fun PartMeshGroup.matchesMeshName(meshName: String): Boolean {
+    if (meshName.isBlank()) return false
+    val normalized = meshName.lowercase()
+    return meshNameHints.any { hint -> normalized.contains(hint.lowercase()) }
 }

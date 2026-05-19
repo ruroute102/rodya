@@ -1,5 +1,7 @@
 package ru.techgid.presentation.screen.viewer3d
 
+import android.graphics.Paint
+import android.graphics.Typeface
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -19,17 +21,24 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameMillis
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.isActive
 import kotlin.math.PI
 import kotlin.math.abs
+import kotlin.math.max
 import kotlin.math.sin
 import kotlin.math.tan
 
@@ -61,6 +70,9 @@ class Car3DCameraState(
 data class RenderOptions(
     val highlightedPartIds: Set<String> = emptySet(),
     val hiddenPartIds: Set<String> = emptySet(),
+    val partOffsets: Map<String, Vec3> = emptyMap(),
+    val calloutTitle: String? = null,
+    val calloutSubtitle: String? = null,
 )
 
 @Composable
@@ -157,19 +169,20 @@ fun Car3DRenderer(
             val focus = cameraState.focus
             val cameraDistance = 8.5f / cameraState.zoom
             val fov = (PI / 3).toFloat()
-            val projected = Array(mesh.vertices.size) { i ->
-                val v = mesh.vertices[i] - focus
+            fun projectVertex(vertexIndex: Int, partId: String): VertexProjected {
+                val partOffset = options.partOffsets[partId] ?: Vec3(0f, 0f, 0f)
+                val v = mesh.vertices[vertexIndex] + partOffset - focus
                 val r = v.rotateY(yaw).rotateX(pitch)
                 val z = r.z + cameraDistance
                 val screen = perspectiveProject(r, cameraDistance, fov, canvasSize)
-                VertexProjected(screen, z, r)
+                return VertexProjected(screen, z, r)
             }
 
             val visibleFaces = mesh.faces.mapNotNull { face ->
                 if (face.partId in options.hiddenPartIds) return@mapNotNull null
-                val va = projected[face.a]
-                val vb = projected[face.b]
-                val vc = projected[face.c]
+                val va = projectVertex(face.a, face.partId)
+                val vb = projectVertex(face.b, face.partId)
+                val vc = projectVertex(face.c, face.partId)
 
                 val ax = vb.screen.x - va.screen.x
                 val ay = vb.screen.y - va.screen.y
@@ -307,13 +320,13 @@ fun Car3DRenderer(
                         )
 
                         if (isHighlighted) {
-                            drawPath(path, color = Color(1f, 0.42f, 0f, 0.04f),
+                            drawPath(path, color = accentColor.copy(alpha = 0.04f),
                                 style = Stroke(width = 38f))
-                            drawPath(path, color = Color(1f, 0.45f, 0f, 0.08f),
+                            drawPath(path, color = accentColor.copy(alpha = 0.08f),
                                 style = Stroke(width = 26f))
-                            drawPath(path, color = Color(1f, 0.48f, 0f, 0.14f),
+                            drawPath(path, color = accentColor.copy(alpha = 0.14f),
                                 style = Stroke(width = 17f))
-                            drawPath(path, color = Color(1f, 0.52f, 0f, 0.22f),
+                            drawPath(path, color = accentColor.copy(alpha = 0.22f),
                                 style = Stroke(width = 10f))
                             drawPath(path, color = accentColor.copy(alpha = 0.46f),
                                 style = Stroke(width = 4.5f))
@@ -351,6 +364,16 @@ fun Car3DRenderer(
                     }
                 }
             }
+
+            drawRepairCallout(
+                visibleFaces = visibleFaces,
+                highlightedPartIds = options.highlightedPartIds,
+                title = options.calloutTitle,
+                subtitle = options.calloutSubtitle,
+                accentColor = accentColor,
+                ghostMode = ghostMode,
+                canvasSize = canvasSize,
+            )
         }
     }
 }
@@ -362,6 +385,7 @@ private val GHOST_EXTERIOR_IDS = setOf(
 
 private val SEMI_GHOST_IDS = setOf(
     PartId.WHEEL_FL, PartId.WHEEL_FR, PartId.WHEEL_RL, PartId.WHEEL_RR,
+    PartId.REAR_SEAT,
 )
 
 private data class VertexProjected(
@@ -378,6 +402,118 @@ private data class FaceDraw(
     val avgZ: Float,
     val normal: Vec3,
 )
+
+private fun DrawScope.drawRepairCallout(
+    visibleFaces: List<FaceDraw>,
+    highlightedPartIds: Set<String>,
+    title: String?,
+    subtitle: String?,
+    accentColor: Color,
+    ghostMode: Boolean,
+    canvasSize: Size,
+) {
+    if (highlightedPartIds.isEmpty() || title.isNullOrBlank()) return
+
+    val highlightedFaces = visibleFaces.filter { it.face.partId in highlightedPartIds }
+    if (highlightedFaces.isEmpty()) return
+
+    var totalX = 0f
+    var totalY = 0f
+    var count = 0
+    highlightedFaces.forEach { face ->
+        totalX += face.a.x + face.b.x + face.c.x
+        totalY += face.a.y + face.b.y + face.c.y
+        count += 3
+    }
+    if (count == 0) return
+
+    val anchor = Offset(totalX / count, totalY / count)
+    val glowRadius = max(canvasSize.minDimension * 0.018f, 18f)
+
+    drawCircle(
+        color = accentColor.copy(alpha = 0.18f),
+        radius = glowRadius * 1.9f,
+        center = anchor,
+    )
+    drawCircle(
+        color = accentColor.copy(alpha = 0.34f),
+        radius = glowRadius,
+        center = anchor,
+    )
+    drawCircle(
+        color = accentColor.copy(alpha = 0.92f),
+        radius = max(glowRadius * 0.22f, 5f),
+        center = anchor,
+    )
+
+    val titlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = if (ghostMode) Color.White.toArgb() else Color(0xFF16202B).toArgb()
+        textSize = 13.sp.toPx()
+        typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+    }
+    val subtitlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = if (ghostMode) Color(0xFFC8D2DE).toArgb() else Color(0xFF5D6875).toArgb()
+        textSize = 10.sp.toPx()
+    }
+
+    val safeSubtitle = subtitle?.takeIf { it.isNotBlank() }
+    val horizontalPadding = 13.dp.toPx()
+    val verticalPadding = 10.dp.toPx()
+    val titleWidth = titlePaint.measureText(title)
+    val subtitleWidth = safeSubtitle?.let { subtitlePaint.measureText(it) } ?: 0f
+    val labelWidth = max(titleWidth, subtitleWidth) + horizontalPadding * 2f
+    val labelHeight = if (safeSubtitle != null) 54.dp.toPx() else 38.dp.toPx()
+
+    val placeRight = anchor.x < canvasSize.width * 0.56f
+    val desiredLeft = if (placeRight) anchor.x + 54.dp.toPx() else anchor.x - labelWidth - 54.dp.toPx()
+    val labelLeft = desiredLeft.coerceIn(12.dp.toPx(), canvasSize.width - labelWidth - 12.dp.toPx())
+    val labelTop = (anchor.y - labelHeight * 0.72f)
+        .coerceIn(12.dp.toPx(), canvasSize.height - labelHeight - 12.dp.toPx())
+    val labelCenterY = labelTop + labelHeight / 2f
+    val labelEdgeX = if (placeRight) labelLeft else labelLeft + labelWidth
+
+    drawLine(
+        color = accentColor.copy(alpha = 0.78f),
+        start = anchor,
+        end = Offset(labelEdgeX, labelCenterY),
+        strokeWidth = 2.dp.toPx(),
+    )
+    drawCircle(
+        color = accentColor,
+        radius = 3.dp.toPx(),
+        center = Offset(labelEdgeX, labelCenterY),
+    )
+
+    drawRoundRect(
+        color = if (ghostMode) Color(0xE61B222E) else Color(0xEEFFFFFF),
+        topLeft = Offset(labelLeft, labelTop),
+        size = Size(labelWidth, labelHeight),
+        cornerRadius = CornerRadius(12.dp.toPx(), 12.dp.toPx()),
+    )
+    drawRoundRect(
+        color = accentColor.copy(alpha = 0.48f),
+        topLeft = Offset(labelLeft, labelTop),
+        size = Size(labelWidth, labelHeight),
+        cornerRadius = CornerRadius(12.dp.toPx(), 12.dp.toPx()),
+        style = Stroke(width = 1.dp.toPx()),
+    )
+
+    val nativeCanvas = drawContext.canvas.nativeCanvas
+    nativeCanvas.drawText(
+        title,
+        labelLeft + horizontalPadding,
+        labelTop + verticalPadding + 13.sp.toPx(),
+        titlePaint,
+    )
+    if (safeSubtitle != null) {
+        nativeCanvas.drawText(
+            safeSubtitle,
+            labelLeft + horizontalPadding,
+            labelTop + verticalPadding + 31.sp.toPx(),
+            subtitlePaint,
+        )
+    }
+}
 
 private fun perspectiveProject(
     view: Vec3,

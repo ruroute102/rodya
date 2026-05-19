@@ -1,5 +1,6 @@
 package ru.techgid.presentation.screen.viewer3d
 
+import androidx.compose.ui.graphics.Color
 import ru.techgid.domain.model.Difficulty
 import kotlin.math.PI
 
@@ -30,6 +31,7 @@ data class SceneNode(
     val highlightPartIds: Set<String>,
     val hidePartIds: Set<String> = emptySet(),
     val cameraPreset: CameraPreset = CameraPreset.DEFAULT,
+    val highlightColor: Color = Color(0xFFFF8A00),
 )
 
 data class InstructionStep(
@@ -38,6 +40,7 @@ data class InstructionStep(
     val highlightPartIds: Set<String>,
     val hidePartIds: Set<String> = emptySet(),
     val cameraPreset: CameraPreset,
+    val partOffsets: Map<String, Vec3> = emptyMap(),
 )
 
 data class CarSceneConfig(
@@ -80,6 +83,24 @@ fun buildSceneConfig(carName: String): CarSceneConfig = when {
 
 private fun audiQ3SceneConfig(): CarSceneConfig {
     val nodes = listOf(
+        SceneNode(
+            id = "fuel_pump",
+            label = "Топл. насос",
+            title = "Модуль топливного насоса",
+            location = "Под задним сиденьем · в баке",
+            description = "Доступ через лючок под задним сиденьем. Для ремонта сиденье скрывается, крышка и модуль подсвечиваются как на x-ray схеме.",
+            difficulty = Difficulty.MEDIUM,
+            highlightPartIds = setOf(PartId.FUEL_PUMP, PartId.FUEL_PUMP_COVER),
+            hidePartIds = setOf(PartId.REAR_SEAT),
+            cameraPreset = CameraPreset(
+                yaw = (-PI / 7).toFloat(),
+                pitch = (-PI / 5).toFloat(),
+                zoom = 1.85f,
+                focusY = 0.64f,
+                focusZ = -0.94f,
+            ),
+            highlightColor = Color(0xFF25B7FF),
+        ),
         SceneNode(
             id = "engine",
             label = "Двигатель",
@@ -175,6 +196,47 @@ private fun audiQ3SceneConfig(): CarSceneConfig {
     )
 
     val instructions = mapOf(
+        "fuel_pump" to listOf(
+            InstructionStep(
+                "fuel_1", "Снимите заднее сиденье",
+                setOf(PartId.REAR_SEAT, PartId.ACCESS_MARKER),
+                emptySet(),
+                CameraPreset(
+                    yaw = (-PI / 6).toFloat(),
+                    pitch = (-PI / 5).toFloat(),
+                    zoom = 1.65f,
+                    focusY = 0.92f,
+                    focusZ = -0.98f,
+                ),
+            ),
+            InstructionStep(
+                "fuel_2", "Откройте крышку доступа",
+                setOf(PartId.FUEL_PUMP_COVER),
+                setOf(PartId.REAR_SEAT),
+                CameraPreset(
+                    yaw = (-PI / 7).toFloat(),
+                    pitch = (-PI / 4.5).toFloat(),
+                    zoom = 2.05f,
+                    focusY = 0.58f,
+                    focusZ = -0.92f,
+                ),
+            ),
+            InstructionStep(
+                "fuel_3", "Извлеките модуль насоса",
+                setOf(PartId.FUEL_PUMP, PartId.FUEL_TANK),
+                setOf(PartId.REAR_SEAT),
+                CameraPreset(
+                    yaw = (-PI / 8).toFloat(),
+                    pitch = (-PI / 4).toFloat(),
+                    zoom = 2.2f,
+                    focusY = 0.56f,
+                    focusZ = -0.92f,
+                ),
+                partOffsets = mapOf(
+                    PartId.FUEL_PUMP to Vec3(0f, 0.30f, 0f),
+                ),
+            ),
+        ),
         "oil_filter" to listOf(
             InstructionStep(
                 "oil_1", "Расположение фильтра",

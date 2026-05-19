@@ -1,106 +1,111 @@
 # 3D-модели автомобилей (.glb)
 
-Приложение загружает `.glb`-модели из этой папки через Google Filament (SceneView).
-Если модель для конкретного авто не найдена, отображается процедурная 3D-модель (fallback).
+Цель 3D в ТехГид: не универсальная машинка, а уникальная x-ray модель каждой
+конфигурации автомобиля с подсветкой ремонтных узлов.
 
-## Как добавить модель
+Пример целевой структуры:
 
-1. Получите файл `.glb` (см. источники ниже).
-2. Назовите файл в соответствии с таблицей имён (см. ниже).
-3. Положите файл в эту папку: `android/app/src/main/assets/models/`.
-4. Пересоберите приложение — модель подхватится автоматически.
-
-## Таблица имён файлов
-
-| Марка / модель        | Имя файла          |
-|-----------------------|--------------------|
-| Audi Q3               | `audi_q3.glb`      |
-| BMW (любая)           | `bmw.glb`           |
-| Mercedes (любая)      | `mercedes.glb`      |
-| Toyota (любая)        | `toyota.glb`        |
-| Volkswagen / VW / Golf| `volkswagen.glb`    |
-| Lada / ВАЗ            | `lada.glb`          |
-| Hyundai / Kia         | `hyundai.glb`       |
-| Skoda                 | `skoda.glb`         |
-| Renault               | `renault.glb`       |
-| Mazda                 | `mazda.glb`         |
-| Honda                 | `honda.glb`         |
-| Nissan                | `nissan.glb`        |
-| Mitsubishi            | `mitsubishi.glb`    |
-| Ford                  | `ford.glb`          |
-| Chevrolet             | `chevrolet.glb`     |
-| Lexus                 | `lexus.glb`         |
-| Subaru                | `subaru.glb`        |
-
-Логика сопоставления определена в `ModelRegistry.kt`.
-Чтобы добавить новую марку, добавьте запись в `ModelRegistry.nameToAsset` и файл в эту папку.
-
-## Требования к модели
-
-- **Формат:** GLB (binary glTF 2.0). Не GLTF с отдельными файлами.
-- **Размер файла:** до 20 МБ (APK-бюджет). Идеально — 5-10 МБ.
-- **Полигоны:** 30 000–80 000 треугольников. Больше — тормоза на слабых устройствах.
-- **Материалы:** PBR (metallic-roughness workflow). Filament поддерживает
-  baseColor, metallic, roughness, normal, occlusion, emissive текстуры.
-- **Ориентация:** Y — вверх, капот — в сторону -Z. Масштаб ~4-5м по длине
-  (рендерер применяет `scaleToUnits = 1.8f`).
-
-## Источники моделей
-
-### 1. Meshy.ai (AI text-to-3D) — рекомендуемый
-1. Зайдите на [meshy.ai](https://www.meshy.ai/).
-2. Выберите **Text to 3D** → введите промпт, например:
-   `"sedan car, Audi Q3 2023, full body, clean studio, PBR materials, no background"`
-3. Дождитесь генерации (~2 мин), отрефайните если нужно.
-4. Скачайте в формате **GLB**.
-5. Проверьте размер; при необходимости оптимизируйте (см. ниже).
-
-### 2. Tripo3D (AI image/text-to-3D)
-1. Зайдите на [tripo3d.ai](https://www.tripo3d.ai/).
-2. Загрузите фото автомобиля или введите текстовый промпт.
-3. Экспорт → GLB.
-
-### 3. Luma Genie / Luma AI
-1. Откройте [lumalabs.ai/genie](https://lumalabs.ai/genie).
-2. Введите промпт: `"car, [brand] [model], studio lighting, PBR"`.
-3. Скачайте GLB.
-
-### 4. Sketchfab (готовые модели)
-1. Зайдите на [sketchfab.com](https://sketchfab.com/search?q=car&type=models&downloadable=true).
-2. Фильтр: Downloadable → Price: Free → формат glTF.
-3. Скачайте, конвертируйте при необходимости.
-
-### 5. CGTrader / TurboSquid (платные, высокое качество)
-1. Ищите `"[brand] car low poly glTF"`.
-2. Покупайте модель в формате glTF/GLB.
-
-## Оптимизация модели
-
-Если файл слишком большой или тормозит:
-
-```bash
-# Установите gltf-transform (Node.js)
-npm install -g @gltf-transform/cli
-
-# Уменьшите полигоны
-gltf-transform simplify input.glb output.glb --ratio 0.5
-
-# Сожмите текстуры (WebP, KTX2)
-gltf-transform resize input.glb output.glb --width 1024 --height 1024
-
-# Draco-компрессия геометрии
-gltf-transform draco input.glb output.glb
-
-# Всё вместе
-gltf-transform optimize input.glb output.glb
+```text
+assets/models/
+  audi/q3/8u/2011_2_0_tfsi/
+    model.glb
+    preview.png
+    parts_metadata.json
+    camera_presets.json
 ```
 
-Или используйте онлайн: [gltf.report](https://gltf.report/) — загрузите,
-оптимизируйте, скачайте.
+Если `model.glb` для выбранной конфигурации не найден, приложение использует
+процедурный fallback-рендерер, чтобы экран 3D не был пустым.
 
-## HDR-окружение
+## Текущий профиль
 
-Для реалистичного PBR-освещения нужен файл `environments/studio.hdr`
-в папке `assets/`. Скачайте любой студийный HDRI с
-[Poly Haven](https://polyhaven.com/hdris) (512×256 достаточно),
-назовите `studio.hdr`, положите в `android/app/src/main/assets/environments/`.
+| Авто | ID | GLB |
+|------|----|-----|
+| Audi Q3 8U 2011 2.0 TFSI | `audi_q3_8u_2011_2_0_tfsi` | `models/audi/q3/8u/2011_2_0_tfsi/model.glb` |
+
+Старый путь `models/audi_q3.glb` поддержан как временная совместимость, но новые
+модели нужно класть только в папку конкретной конфигурации.
+
+## Требования к GLB
+
+- Формат: binary glTF 2.0 (`.glb`), один файл.
+- Размер: желательно 8-25 МБ для APK; тяжелее лучше грузить с CDN.
+- Геометрия: 60 000-180 000 треугольников для премиум-модели, с LOD позже.
+- Материалы: PBR metallic-roughness, отдельные материалы для кузова, стекла,
+  салона, внутренних узлов и подсветки.
+- Оси: `Y` вверх, перед автомобиля в сторону `-Z`, единицы в метрах.
+- Кузов: отдельные mesh с прозрачным материалом, не слитые с внутренностями.
+- Узлы: ремонтные детали должны быть отдельными mesh/node, чтобы их можно было
+  подсвечивать и скрывать по шагам.
+- Скрываемые слои: имя mesh/node должно содержать один из `meshNameHints`,
+  иначе кнопки вроде `Скрыть сиденье` не смогут найти нужный слой в GLB.
+
+## Обязательные mesh names для Audi Q3
+
+Имена могут быть точными или близкими, но должны содержать эти ключи:
+
+| Узел | Mesh name hints |
+|------|-----------------|
+| Кузов | `body`, `body_shell`, `doors`, `fenders`, `hood`, `trunk` |
+| Стекла | `glass`, `windows`, `windshield` |
+| Заднее сиденье | `rear_seat`, `rear_seat_cushion`, `seat_back_rear` |
+| Топливный бак | `fuel_tank`, `tank` |
+| Крышка доступа | `fuel_access_cover`, `fuel_pump_cover`, `tank_cover` |
+| Модуль топливного насоса | `fuel_pump`, `fuel_pump_module`, `sea_pump` |
+| Масляный фильтр | `oil_filter`, `filter_oil` |
+| Коробка передач | `transmission`, `gearbox`, `dsg`, `dq250` |
+| Приводные валы | `drive_shaft`, `cv_axle`, `halfshaft` |
+
+Эти группы продублированы в `parts_metadata.json` и `ModelRegistry.kt`.
+
+## Визуальный стиль
+
+- Светлая тема: белый/молочный фон, светлый полупрозрачный кузов, голубая
+  подсветка текущей детали.
+- Темная тема: глубокий графитовый фон, реалистичные отражения, яркие фары,
+  оранжевые технические акценты для двигателя/КПП.
+- Ремонтный x-ray: кузов 20-35% opacity, внутренние узлы читаемые, активная
+  деталь имеет emissive glow.
+- Fuel pump flow: заднее сиденье скрывается, крышка доступа и модуль насоса
+  подсвечиваются синим.
+- На fallback-модели активный узел получает glow, точку привязки и callout-метку.
+  В GLB-режиме скрытие слоев работает через `meshNameHints`; emissive-подсветка
+  будет следующим слоем после подключения настоящего `model.glb`.
+- Пошаговый демонтаж может двигать отдельные детали через `partOffsets`.
+  Например, `fuel_pump: [0.0, 0.30, 0.0]` приподнимает модуль насоса из бака.
+
+## Добавление новой машины
+
+1. Создать папку:
+   `models/<brand>/<model>/<generation>/<year_engine>/`
+2. Положить `model.glb`.
+3. Добавить `preview.png`.
+4. Заполнить `parts_metadata.json` и `camera_presets.json`.
+5. Добавить запись в `ModelRegistry.assets`.
+6. Добавить/обновить `CarSceneConfig` для узлов и шагов ремонта.
+7. Проверить на устройстве: загрузка, масштаб, камера, прозрачность, подсветка,
+   скрытие слоев.
+
+## Где брать модели
+
+Лучший результат даст ручная доработка в Blender: базовая GLB-модель автомобиля,
+отдельные внутренние узлы, корректные материалы и имена mesh/node по контракту.
+
+Возможные источники:
+
+- купленная/лицензированная модель с CGTrader, TurboSquid, Sketchfab;
+- собственная Blender-модель на основе референсов;
+- CAD/сканы, оптимизированные под mobile;
+- AI text/image-to-3D как черновик, но не как финальное качество.
+
+## Оптимизация
+
+```bash
+npm install -g @gltf-transform/cli
+gltf-transform optimize input.glb output.glb
+gltf-transform resize input.glb output.glb --width 1024 --height 1024
+gltf-transform simplify input.glb output.glb --ratio 0.7
+```
+
+Для премиум-x-ray лучше не сливать все детали в один mesh: после оптимизации
+проверьте, что имена узлов сохранились.

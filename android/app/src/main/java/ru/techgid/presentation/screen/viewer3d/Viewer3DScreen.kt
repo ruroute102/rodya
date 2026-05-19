@@ -20,6 +20,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ChevronLeft
@@ -39,6 +41,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -65,31 +68,69 @@ fun Viewer3DScreen(
     val mesh by viewModel.mesh.collectAsState()
     val sceneConfig by viewModel.sceneConfig.collectAsState()
     val cameraState = remember { Car3DCameraState() }
-    var hiddenPartIds by remember { mutableStateOf<Set<String>>(emptySet()) }
-    var selectedNodeIndex by remember { mutableIntStateOf(0) }
-    var instructionMode by remember { mutableStateOf(false) }
-    var instructionStep by remember { mutableIntStateOf(0) }
+    var hiddenPartIds by remember(sceneConfig.carId) { mutableStateOf<Set<String>>(emptySet()) }
+    var selectedNodeIndex by remember(sceneConfig.carId) { mutableIntStateOf(0) }
+    var instructionMode by remember(sceneConfig.carId) { mutableStateOf(false) }
+    var instructionStep by remember(sceneConfig.carId) { mutableIntStateOf(0) }
 
     val nodes = sceneConfig.nodes
     val selectedNode = nodes.getOrNull(selectedNodeIndex) ?: nodes.first()
     val steps = sceneConfig.instructions[selectedNode.id]
+    val activeHighlightColor = selectedNode.highlightColor
+    val hideActionIds = selectedNode.hidePartIds.ifEmpty { selectedNode.highlightPartIds }
+    val hasHiddenActionIds = hideActionIds.any { it in hiddenPartIds }
+    val hideActionLabel = when {
+        PartId.REAR_SEAT in hideActionIds && hasHiddenActionIds -> "Показать сиденье"
+        PartId.REAR_SEAT in hideActionIds -> "Скрыть сиденье"
+        hasHiddenActionIds -> "Показать слой"
+        else -> "Скрыть слой"
+    }
+
+    LaunchedEffect(sceneConfig.carId) {
+        cameraState.applyPreset(selectedNode.cameraPreset)
+    }
 
     val activeHighlightIds: Set<String>
     val activeHideIds: Set<String>
+    val activePartOffsets: Map<String, Vec3>
+    val activeCalloutTitle: String
+    val activeCalloutSubtitle: String
 
     if (instructionMode && steps != null && instructionStep in steps.indices) {
         val step = steps[instructionStep]
         activeHighlightIds = step.highlightPartIds
         activeHideIds = step.hidePartIds
+        activePartOffsets = step.partOffsets
+        activeCalloutTitle = step.label
+        activeCalloutSubtitle = selectedNode.title
     } else {
         activeHighlightIds = selectedNode.highlightPartIds
         activeHideIds = hiddenPartIds
+        activePartOffsets = emptyMap()
+        activeCalloutTitle = selectedNode.title
+        activeCalloutSubtitle = selectedNode.location
     }
 
     val context = LocalContext.current
-    val glbAssetPath = remember(sceneConfig.displayName) {
-        ModelRegistry.resolveAssetPath(sceneConfig.displayName, context)
+    val assetSpec = remember(sceneConfig.displayName) {
+        ModelRegistry.resolveAssetSpec(sceneConfig.displayName, context)
     }
+    val glbAssetPath = assetSpec?.bundledModelAssetPath
+    val partOffsetProgress by animateFloatAsState(
+        targetValue = if (activePartOffsets.isEmpty()) 0f else 1f,
+        animationSpec = tween(durationMillis = 550),
+        label = "part_offset_progress",
+    )
+    val animatedPartOffsets = activePartOffsets.mapValues { (_, offset) ->
+        offset * partOffsetProgress
+    }
+    val activeRenderOptions = RenderOptions(
+        highlightedPartIds = activeHighlightIds,
+        hiddenPartIds = activeHideIds,
+        partOffsets = animatedPartOffsets,
+        calloutTitle = activeCalloutTitle,
+        calloutSubtitle = activeCalloutSubtitle,
+    )
 
     val viewportBg = if (sceneConfig.ghostMode) {
         Color(0xFF080C14)
@@ -137,13 +178,14 @@ fun Viewer3DScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .weight(1f)
-                .padding(horizontal = 16.dp)
-                .clip(RoundedCornerShape(24.dp))
                 .background(viewportBg),
         ) {
             if (glbAssetPath != null) {
                 Car3DGlbRenderer(
                     modelAssetPath = glbAssetPath,
+                    cameraState = cameraState,
+                    assetSpec = assetSpec,
+                    options = activeRenderOptions,
                     modifier = Modifier.fillMaxSize(),
                     bgColor = viewportBg,
                 )
@@ -152,11 +194,8 @@ fun Viewer3DScreen(
                     mesh = mesh,
                     cameraState = cameraState,
                     modifier = Modifier.fillMaxSize(),
-                    options = RenderOptions(
-                        highlightedPartIds = activeHighlightIds,
-                        hiddenPartIds = activeHideIds,
-                    ),
-                    accentColor = Color(0xFFFF6D00),
+                    options = activeRenderOptions,
+                    accentColor = activeHighlightColor,
                     interactive = true,
                     ghostMode = sceneConfig.ghostMode,
                 )
@@ -208,7 +247,7 @@ fun Viewer3DScreen(
                     Text(
                         text = "${instructionStep + 1}/${steps.size}: ${steps[instructionStep].label}",
                         style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
-                        color = Color(0xFFFF6D00),
+                        color = activeHighlightColor,
                     )
                 }
             }
@@ -375,11 +414,10 @@ fun Viewer3DScreen(
                 ) {
                     OutlinedButton(
                         onClick = {
-                            val ids = selectedNode.highlightPartIds + selectedNode.hidePartIds
-                            hiddenPartIds = if (ids.any { it in hiddenPartIds }) {
-                                hiddenPartIds - ids
+                            hiddenPartIds = if (hasHiddenActionIds) {
+                                hiddenPartIds - hideActionIds
                             } else {
-                                hiddenPartIds + ids
+                                hiddenPartIds + hideActionIds
                             }
                         },
                         modifier = Modifier.weight(1f),
@@ -388,7 +426,7 @@ fun Viewer3DScreen(
                         Icon(Icons.Filled.VisibilityOff, contentDescription = null,
                             modifier = Modifier.size(16.dp))
                         Spacer(Modifier.width(6.dp))
-                        Text("Скрыть слой", style = MaterialTheme.typography.labelMedium)
+                        Text(hideActionLabel, style = MaterialTheme.typography.labelMedium)
                     }
                     if (steps != null) {
                         OutlinedButton(

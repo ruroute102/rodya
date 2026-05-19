@@ -70,6 +70,11 @@ object PartId {
     const val OIL_PAN = "oil_pan"
     const val ALTERNATOR = "alternator"
     const val STARTER = "starter"
+    const val REAR_SEAT = "rear_seat"
+    const val FUEL_TANK = "fuel_tank"
+    const val FUEL_PUMP = "fuel_pump"
+    const val FUEL_PUMP_COVER = "fuel_pump_cover"
+    const val ACCESS_MARKER = "access_marker"
 }
 
 /** Треугольная грань с привязкой к детали и базовым цветом. */
@@ -629,6 +634,28 @@ fun buildAudiQ3Mesh(): Mesh {
         addBox(verts, faces, Vec3(sign * 0.75f, roof + 0.03f, -0.35f),
             Vec3(0.04f, 0.04f, 1.90f), PartId.CABIN, roofRail, roofRail)
     }
+
+    // ── 12. Rear-seat fuel pump access zone ─────────────────────────────
+    // This is the first repair-focused interior cluster. It mirrors the
+    // reference UX: rear seat can be hidden, the access cover glows blue, and
+    // the fuel tank stays visible through x-ray body materials.
+    val rearSeatCol = Color(0xFF5C6674)
+    val fuelTankCol = Color(0xFF607D8B)
+    val fuelPumpBlue = Color(0xFF29B6F6)
+    val markerYellow = Color(0xFFFFC928)
+
+    addBox(verts, faces, Vec3(0.0f, 0.82f, -0.98f),
+        Vec3(1.34f, 0.16f, 0.68f), PartId.REAR_SEAT, rearSeatCol, Color(0xFF3D4652))
+    addBox(verts, faces, Vec3(0.0f, 1.08f, -1.26f),
+        Vec3(1.28f, 0.44f, 0.12f), PartId.REAR_SEAT, rearSeatCol, Color(0xFF3D4652))
+    addBox(verts, faces, Vec3(0.0f, 0.40f, -1.02f),
+        Vec3(1.05f, 0.18f, 0.70f), PartId.FUEL_TANK, fuelTankCol, Color(0xFF455A64))
+    addVerticalCylinder(verts, faces, Vec3(0.0f, 0.56f, -0.92f),
+        0.23f, 0.05f, 20, PartId.FUEL_PUMP_COVER, fuelPumpBlue, Color(0xFF0288D1))
+    addVerticalCylinder(verts, faces, Vec3(0.0f, 0.62f, -0.92f),
+        0.13f, 0.15f, 20, PartId.FUEL_PUMP, fuelPumpBlue, Color(0xFF0277BD))
+    addBox(verts, faces, Vec3(0.0f, 1.18f, -0.92f),
+        Vec3(0.30f, 0.04f, 0.30f), PartId.ACCESS_MARKER, markerYellow, markerYellow)
 
     // ── INTERNAL COMPONENTS — EA888 Gen 2 (CDNC) 2.0 TFSI ─────────────
     // Engine is transverse-mounted. Intake side faces front (+Z), exhaust
