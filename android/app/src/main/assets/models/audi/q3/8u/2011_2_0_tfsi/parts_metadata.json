@@ -51,11 +51,49 @@
       "materialRole": "blueHighlight"
     },
     {
+      "id": "fuel_locking_ring",
+      "title": "Стопорное кольцо фланца",
+      "meshNames": ["fuel_locking_ring", "locking_ring", "pump_lock_ring"],
+      "materialRole": "xrayInternal"
+    },
+    {
+      "id": "fuel_connector",
+      "title": "Разъём модуля насоса",
+      "meshNames": ["fuel_connector", "pump_connector", "flange_connector"],
+      "materialRole": "orangeHighlight"
+    },
+    {
+      "id": "fuel_line",
+      "title": "Топливная магистраль к двигателю",
+      "meshNames": ["fuel_line", "fuel_supply_line", "petrol_line"],
+      "materialRole": "xrayInternal"
+    },
+    {
+      "id": "fuel_pump_controller",
+      "title": "Блок управления топливным насосом J538",
+      "meshNames": ["fuel_pump_controller", "j538", "pump_control_unit"],
+      "materialRole": "orangeHighlight"
+    },
+    {
       "id": "fuel_pump",
       "title": "Модуль топливного насоса",
       "meshNames": ["fuel_pump", "fuel_pump_module", "sea_pump"],
       "materialRole": "blueHighlight",
       "access": "Под задним сиденьем"
+    },
+    {
+      "id": "fuel_sender_left",
+      "title": "Левый датчик уровня топлива G169",
+      "meshNames": ["fuel_sender_left", "fuel_gauge_sender_2", "g169"],
+      "materialRole": "blueHighlight",
+      "access": "Под задним сиденьем, левый фланец"
+    },
+    {
+      "id": "suction_jet_pump",
+      "title": "Suction-jet pump левой камеры бака",
+      "meshNames": ["suction_jet_pump", "jet_pump", "transfer_pump"],
+      "materialRole": "blueHighlight",
+      "access": "Внутри седловидного бака"
     },
     {
       "id": "oil_filter",

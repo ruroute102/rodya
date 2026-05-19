@@ -74,6 +74,12 @@ object PartId {
     const val FUEL_TANK = "fuel_tank"
     const val FUEL_PUMP = "fuel_pump"
     const val FUEL_PUMP_COVER = "fuel_pump_cover"
+    const val FUEL_SENDER_LEFT = "fuel_sender_left"
+    const val SUCTION_JET_PUMP = "suction_jet_pump"
+    const val FUEL_LINE = "fuel_line"
+    const val FUEL_CONNECTOR = "fuel_connector"
+    const val FUEL_LOCKING_RING = "fuel_locking_ring"
+    const val FUEL_PUMP_CONTROLLER = "fuel_pump_controller"
     const val ACCESS_MARKER = "access_marker"
 }
 
@@ -637,25 +643,58 @@ fun buildAudiQ3Mesh(): Mesh {
     }
 
     // ── 12. Rear-seat fuel pump access zone ─────────────────────────────
-    // This is the first repair-focused interior cluster. It mirrors the
-    // reference UX: rear seat can be hidden, the access cover glows blue, and
-    // the fuel tank stays visible through x-ray body materials.
+    // This repair-focused cluster follows the Audi Q3 fuel supply manual:
+    // saddle tank, right-side delivery unit/flange, left sender/suction-jet
+    // pump, J538 controller, fuel line and removable rear seat bench.
     val rearSeatCol = Color(0xFF5C6674)
     val fuelTankCol = Color(0xFF607D8B)
     val fuelPumpBlue = Color(0xFF29B6F6)
     val markerYellow = Color(0xFFFFC928)
+    val serviceMetal = Color(0xFFB0BEC5)
+    val fuelLineCol = Color(0xFF90A4AE)
+    val fuelSenderCol = Color(0xFF26C6DA)
+    val controllerCol = Color(0xFFFFB74D)
 
     addBox(verts, faces, Vec3(0.0f, 0.82f, -0.98f),
         Vec3(1.34f, 0.16f, 0.68f), PartId.REAR_SEAT, rearSeatCol, Color(0xFF3D4652))
     addBox(verts, faces, Vec3(0.0f, 1.08f, -1.26f),
         Vec3(1.28f, 0.44f, 0.12f), PartId.REAR_SEAT, rearSeatCol, Color(0xFF3D4652))
-    addBox(verts, faces, Vec3(0.0f, 0.40f, -1.02f),
-        Vec3(1.05f, 0.18f, 0.70f), PartId.FUEL_TANK, fuelTankCol, Color(0xFF455A64))
-    addVerticalCylinder(verts, faces, Vec3(0.0f, 0.56f, -0.92f),
+
+    // 64-l saddle tank: two chambers joined by a lower bridge under the tunnel.
+    addBox(verts, faces, Vec3(-0.34f, 0.40f, -1.02f),
+        Vec3(0.48f, 0.18f, 0.78f), PartId.FUEL_TANK, fuelTankCol, Color(0xFF455A64))
+    addBox(verts, faces, Vec3(0.34f, 0.40f, -1.02f),
+        Vec3(0.48f, 0.18f, 0.78f), PartId.FUEL_TANK, fuelTankCol, Color(0xFF455A64))
+    addBox(verts, faces, Vec3(0.0f, 0.32f, -1.02f),
+        Vec3(0.30f, 0.10f, 0.62f), PartId.FUEL_TANK, Color(0xFF546E7A), Color(0xFF455A64))
+
+    // Right-side flange: fuel delivery unit with pump G6 and gauge sender G.
+    addVerticalCylinder(verts, faces, Vec3(0.34f, 0.56f, -0.92f),
         0.23f, 0.05f, 20, PartId.FUEL_PUMP_COVER, fuelPumpBlue, Color(0xFF0288D1))
-    addVerticalCylinder(verts, faces, Vec3(0.0f, 0.62f, -0.92f),
+    addVerticalCylinder(verts, faces, Vec3(0.34f, 0.62f, -0.92f),
+        0.17f, 0.04f, 20, PartId.FUEL_LOCKING_RING, serviceMetal, Color(0xFF78909C))
+    addVerticalCylinder(verts, faces, Vec3(0.34f, 0.66f, -0.92f),
         0.13f, 0.15f, 20, PartId.FUEL_PUMP, fuelPumpBlue, Color(0xFF0277BD))
-    addBox(verts, faces, Vec3(0.0f, 1.18f, -0.92f),
+
+    // Left-side flange: sender G169 and suction-jet pump transfer from left chamber.
+    addVerticalCylinder(verts, faces, Vec3(-0.34f, 0.56f, -0.92f),
+        0.17f, 0.045f, 18, PartId.FUEL_SENDER_LEFT, fuelSenderCol, Color(0xFF00838F))
+    addBox(verts, faces, Vec3(-0.34f, 0.47f, -0.78f),
+        Vec3(0.20f, 0.08f, 0.10f), PartId.SUCTION_JET_PUMP, fuelSenderCol, Color(0xFF00838F))
+    addBox(verts, faces, Vec3(0.0f, 0.58f, -0.78f),
+        Vec3(0.66f, 0.04f, 0.04f), PartId.SUCTION_JET_PUMP, fuelLineCol, fuelLineCol)
+
+    // External service-visible items around the right flange.
+    addBox(verts, faces, Vec3(0.34f, 0.75f, -0.74f),
+        Vec3(0.16f, 0.06f, 0.10f), PartId.FUEL_CONNECTOR, controllerCol, controllerCol)
+    addBox(verts, faces, Vec3(0.64f, 0.66f, -0.76f),
+        Vec3(0.22f, 0.05f, 0.16f), PartId.FUEL_PUMP_CONTROLLER, controllerCol, Color(0xFFF57C00))
+    addBox(verts, faces, Vec3(0.42f, 0.46f, -0.05f),
+        Vec3(0.055f, 0.055f, 1.72f), PartId.FUEL_LINE, fuelLineCol, fuelLineCol)
+    addBox(verts, faces, Vec3(0.30f, 0.57f, -0.56f),
+        Vec3(0.28f, 0.045f, 0.045f), PartId.FUEL_LINE, fuelLineCol, fuelLineCol)
+
+    addBox(verts, faces, Vec3(0.34f, 1.18f, -0.92f),
         Vec3(0.30f, 0.04f, 0.30f), PartId.ACCESS_MARKER, markerYellow, markerYellow)
 
     // ── INTERNAL COMPONENTS — EA888 Gen 2 (CDNC) 2.0 TFSI ─────────────

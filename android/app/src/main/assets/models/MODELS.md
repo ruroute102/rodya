@@ -52,6 +52,12 @@ assets/models/
 | Топливный бак | `fuel_tank`, `tank` |
 | Крышка доступа | `fuel_access_cover`, `fuel_pump_cover`, `tank_cover` |
 | Модуль топливного насоса | `fuel_pump`, `fuel_pump_module`, `sea_pump` |
+| Стопорное кольцо фланца | `fuel_locking_ring`, `locking_ring`, `pump_lock_ring` |
+| Разъём модуля насоса | `fuel_connector`, `pump_connector`, `flange_connector` |
+| Топливная магистраль | `fuel_line`, `fuel_supply_line`, `petrol_line` |
+| Блок управления насосом J538 | `fuel_pump_controller`, `j538`, `pump_control_unit` |
+| Левый датчик уровня G169 | `fuel_sender_left`, `fuel_gauge_sender_2`, `g169` |
+| Suction-jet pump | `suction_jet_pump`, `jet_pump`, `transfer_pump` |
 | Масляный фильтр | `oil_filter`, `filter_oil` |
 | Коробка передач | `transmission`, `gearbox`, `dsg`, `dq250` |
 | Приводные валы | `drive_shaft`, `cv_axle`, `halfshaft` |
@@ -66,13 +72,14 @@ assets/models/
   оранжевые технические акценты для двигателя/КПП.
 - Ремонтный x-ray: кузов 20-35% opacity, внутренние узлы читаемые, активная
   деталь имеет emissive glow.
-- Fuel pump flow: заднее сиденье скрывается, крышка доступа и модуль насоса
-  подсвечиваются синим.
+- Fuel pump flow: заднее сиденье скрывается, правая крышка доступа, стопорное
+  кольцо, разъём, линия подачи и модуль насоса подсвечиваются по шагам.
 - На fallback-модели активный узел получает glow, точку привязки и callout-метку.
   В GLB-режиме скрытие слоев работает через `meshNameHints`; emissive-подсветка
   будет следующим слоем после подключения настоящего `model.glb`.
 - Пошаговый демонтаж может двигать отдельные детали через `partOffsets`.
-  Например, `fuel_pump: [0.0, 0.30, 0.0]` приподнимает модуль насоса из бака.
+  Например, `fuel_pump: [0.0, 0.34, 0.0]` приподнимает модуль насоса из правого
+  фланца бака.
 
 ## Добавление новой машины
 

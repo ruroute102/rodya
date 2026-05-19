@@ -64,6 +64,42 @@ object ModelRegistry {
                     materialRole = MaterialRole.XRAY_INTERNAL,
                 ),
                 PartMeshGroup(
+                    partId = PartId.FUEL_LOCKING_RING,
+                    displayName = "Стопорное кольцо фланца",
+                    meshNameHints = listOf("fuel_locking_ring", "locking_ring", "pump_lock_ring"),
+                    materialRole = MaterialRole.XRAY_INTERNAL,
+                ),
+                PartMeshGroup(
+                    partId = PartId.FUEL_CONNECTOR,
+                    displayName = "Разъём модуля насоса",
+                    meshNameHints = listOf("fuel_connector", "pump_connector", "flange_connector"),
+                    materialRole = MaterialRole.ORANGE_HIGHLIGHT,
+                ),
+                PartMeshGroup(
+                    partId = PartId.FUEL_LINE,
+                    displayName = "Топливная магистраль",
+                    meshNameHints = listOf("fuel_line", "fuel_supply_line", "petrol_line"),
+                    materialRole = MaterialRole.XRAY_INTERNAL,
+                ),
+                PartMeshGroup(
+                    partId = PartId.FUEL_PUMP_CONTROLLER,
+                    displayName = "Блок J538",
+                    meshNameHints = listOf("fuel_pump_controller", "j538", "pump_control_unit"),
+                    materialRole = MaterialRole.ORANGE_HIGHLIGHT,
+                ),
+                PartMeshGroup(
+                    partId = PartId.FUEL_SENDER_LEFT,
+                    displayName = "Левый датчик G169",
+                    meshNameHints = listOf("fuel_sender_left", "fuel_gauge_sender_2", "g169"),
+                    materialRole = MaterialRole.BLUE_HIGHLIGHT,
+                ),
+                PartMeshGroup(
+                    partId = PartId.SUCTION_JET_PUMP,
+                    displayName = "Suction-jet pump",
+                    meshNameHints = listOf("suction_jet_pump", "jet_pump", "transfer_pump"),
+                    materialRole = MaterialRole.BLUE_HIGHLIGHT,
+                ),
+                PartMeshGroup(
                     partId = PartId.ENGINE_BLOCK,
                     displayName = "Двигатель 2.0 TFSI",
                     meshNameHints = listOf("engine", "engine_block", "ea888"),
