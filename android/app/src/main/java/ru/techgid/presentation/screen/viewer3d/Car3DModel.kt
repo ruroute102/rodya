@@ -648,8 +648,8 @@ fun buildAudiQ3Mesh(): Mesh {
     // pump, J538 controller, fuel line and removable rear seat bench.
     val rearSeatCol = Color(0xFF5C6674)
     val fuelTankCol = Color(0xFF607D8B)
-    val fuelPumpBlue = Color(0xFF29B6F6)
-    val markerYellow = Color(0xFFFFC928)
+    val fuelPumpBlue = Color(0xFF3E8FB0)
+    val markerYellow = Color(0xFFD6A92A)
     val serviceMetal = Color(0xFFB0BEC5)
     val fuelLineCol = Color(0xFF90A4AE)
     val fuelSenderCol = Color(0xFF26C6DA)
@@ -670,11 +670,11 @@ fun buildAudiQ3Mesh(): Mesh {
 
     // Right-side flange: fuel delivery unit with pump G6 and gauge sender G.
     addVerticalCylinder(verts, faces, Vec3(0.34f, 0.56f, -0.92f),
-        0.23f, 0.05f, 20, PartId.FUEL_PUMP_COVER, fuelPumpBlue, Color(0xFF0288D1))
+        0.23f, 0.05f, 20, PartId.FUEL_PUMP_COVER, fuelPumpBlue, Color(0xFF2A6F8C))
     addVerticalCylinder(verts, faces, Vec3(0.34f, 0.62f, -0.92f),
         0.17f, 0.04f, 20, PartId.FUEL_LOCKING_RING, serviceMetal, Color(0xFF78909C))
     addVerticalCylinder(verts, faces, Vec3(0.34f, 0.66f, -0.92f),
-        0.13f, 0.15f, 20, PartId.FUEL_PUMP, fuelPumpBlue, Color(0xFF0277BD))
+        0.13f, 0.15f, 20, PartId.FUEL_PUMP, fuelPumpBlue, Color(0xFF2A6F8C))
 
     // Left-side flange: sender G169 and suction-jet pump transfer from left chamber.
     addVerticalCylinder(verts, faces, Vec3(-0.34f, 0.56f, -0.92f),

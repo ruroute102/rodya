@@ -14,9 +14,9 @@
       "notes": "Body shell should stay readable but transparent enough to show service nodes."
     },
     "blueHighlight": {
-      "baseColor": "#25B7FF",
-      "emissive": "#149DFF",
-      "emissiveStrength": 1.6
+      "baseColor": "#58BFEA",
+      "emissive": "#2A9FD4",
+      "emissiveStrength": 0.85
     },
     "orangeHighlight": {
       "baseColor": "#FF8A00",

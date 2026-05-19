@@ -23,6 +23,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
@@ -32,6 +33,7 @@ import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.sin
+import kotlin.math.sqrt
 import kotlin.math.tan
 
 class Car3DCameraState(
@@ -119,8 +121,8 @@ fun Car3DRenderer(
             if (interactive) {
                 m.pointerInput(Unit) {
                     detectTransformGestures { _, pan, zoomChange, _ ->
-                        cameraState.yaw -= pan.x * ORBIT_YAW_SENSITIVITY
-                        cameraState.pitch = (cameraState.pitch + pan.y * ORBIT_PITCH_SENSITIVITY)
+                        cameraState.yaw += pan.x * ORBIT_YAW_SENSITIVITY
+                        cameraState.pitch = (cameraState.pitch - pan.y * ORBIT_PITCH_SENSITIVITY)
                             .coerceIn(MIN_ORBIT_PITCH, MAX_ORBIT_PITCH)
                         cameraState.zoom = (cameraState.zoom * zoomChange).coerceIn(0.55f, 2.7f)
                     }
@@ -230,7 +232,7 @@ fun Car3DRenderer(
                         val scanDist = abs(normalizedY - scanPhase)
                         val scanBoost = (1f - (scanDist * 6f).coerceAtMost(1f)).coerceAtLeast(0f)
 
-                        val fillAlpha = if (isHighlighted) 0.34f
+                        val fillAlpha = if (isHighlighted) 0.24f
                             else (0.14f + fresnel * 0.12f + scanBoost * 0.10f) * shimmerMod
                         val ambR = ghostGrdR * (1f - hemi) + ghostSkyR * hemi
                         val ambG = ghostGrdG * (1f - hemi) + ghostSkyG * hemi
@@ -280,7 +282,7 @@ fun Car3DRenderer(
 
                     else -> {
                         val base = if (isHighlighted)
-                            blend(f.face.baseColor, accentColor, 0.55f)
+                            blend(f.face.baseColor, accentColor, 0.30f)
                         else
                             f.face.baseColor
 
@@ -292,7 +294,7 @@ fun Car3DRenderer(
                             else grdB * (1f - hemi) + skyB * hemi
 
                         val rimBoost = if (ghostMode) fresnel * 0.20f else 0f
-                        val specStrength = if (isHighlighted) 0.80f else 0.55f
+                        val specStrength = if (isHighlighted) 0.52f else 0.55f
                         val litR = base.red * (0.32f + 0.60f * diffuse + rimBoost) + ambR * 0.18f + spec32 * specStrength
                         val litG = base.green * (0.32f + 0.60f * diffuse + rimBoost) + ambG * 0.18f + spec32 * specStrength
                         val litB = base.blue * (0.32f + 0.60f * diffuse + rimBoost) + ambB * 0.20f + spec32 * specStrength
@@ -308,18 +310,16 @@ fun Car3DRenderer(
                         )
 
                         if (isHighlighted) {
-                            drawPath(path, color = accentColor.copy(alpha = 0.04f),
-                                style = Stroke(width = 38f))
-                            drawPath(path, color = accentColor.copy(alpha = 0.08f),
-                                style = Stroke(width = 26f))
+                            drawPath(path, color = accentColor.copy(alpha = 0.018f),
+                                style = Stroke(width = 32f))
+                            drawPath(path, color = accentColor.copy(alpha = 0.035f),
+                                style = Stroke(width = 20f))
+                            drawPath(path, color = accentColor.copy(alpha = 0.07f),
+                                style = Stroke(width = 12f))
                             drawPath(path, color = accentColor.copy(alpha = 0.14f),
-                                style = Stroke(width = 17f))
-                            drawPath(path, color = accentColor.copy(alpha = 0.22f),
-                                style = Stroke(width = 10f))
-                            drawPath(path, color = accentColor.copy(alpha = 0.46f),
-                                style = Stroke(width = 4.5f))
-                            drawPath(path, color = accentColor,
-                                style = Stroke(width = 1.3f))
+                                style = Stroke(width = 5f))
+                            drawPath(path, color = accentColor.copy(alpha = 0.42f),
+                                style = Stroke(width = 1.2f))
                         } else if (ghostMode) {
                             drawPath(path, color = Color(0x15A0B8D0),
                                 style = Stroke(width = 0.4f))
@@ -424,38 +424,59 @@ private fun DrawScope.drawRepairCallout(
     val glowRadius = max(canvasSize.minDimension * 0.018f, 18f)
 
     drawCircle(
-        color = accentColor.copy(alpha = 0.18f),
-        radius = glowRadius * 1.9f,
+        color = accentColor.copy(alpha = 0.07f),
+        radius = glowRadius * 1.7f,
         center = anchor,
     )
     drawCircle(
-        color = accentColor.copy(alpha = 0.34f),
-        radius = glowRadius,
+        color = accentColor.copy(alpha = 0.16f),
+        radius = glowRadius * 0.82f,
         center = anchor,
     )
     drawCircle(
-        color = accentColor.copy(alpha = 0.92f),
-        radius = max(glowRadius * 0.22f, 5f),
+        color = accentColor.copy(alpha = 0.54f),
+        radius = max(glowRadius * 0.16f, 4f),
         center = anchor,
     )
 
-    val guideLength = 34.dp.toPx()
-    val guideEnd = Offset(
-        x = (anchor.x + if (anchor.x < canvasSize.width * 0.5f) guideLength else -guideLength)
+    val arrowLength = 34.dp.toPx()
+    val arrowTail = Offset(
+        x = (anchor.x + if (anchor.x < canvasSize.width * 0.5f) arrowLength else -arrowLength)
             .coerceIn(12.dp.toPx(), canvasSize.width - 12.dp.toPx()),
-        y = (anchor.y - guideLength * 0.45f).coerceIn(12.dp.toPx(), canvasSize.height - 12.dp.toPx()),
+        y = (anchor.y - arrowLength * 0.42f).coerceIn(12.dp.toPx(), canvasSize.height - 12.dp.toPx()),
     )
+    val dx = anchor.x - arrowTail.x
+    val dy = anchor.y - arrowTail.y
+    val length = sqrt(dx * dx + dy * dy).coerceAtLeast(1f)
+    val ux = dx / length
+    val uy = dy / length
+    val px = -uy
+    val py = ux
+    val headLength = 9.dp.toPx()
+    val headWidth = 5.5.dp.toPx()
+    val headBase = Offset(anchor.x - ux * headLength, anchor.y - uy * headLength)
+    val shaftEnd = Offset(anchor.x - ux * (headLength * 0.82f), anchor.y - uy * (headLength * 0.82f))
 
     drawLine(
+        color = accentColor.copy(alpha = 0.28f),
+        start = arrowTail,
+        end = shaftEnd,
+        strokeWidth = 1.25.dp.toPx(),
+        cap = StrokeCap.Round,
+    )
+    drawPath(
+        path = Path().apply {
+            moveTo(anchor.x, anchor.y)
+            lineTo(headBase.x + px * headWidth, headBase.y + py * headWidth)
+            lineTo(headBase.x - px * headWidth, headBase.y - py * headWidth)
+            close()
+        },
         color = accentColor.copy(alpha = 0.38f),
-        start = anchor,
-        end = guideEnd,
-        strokeWidth = 1.4.dp.toPx(),
     )
     drawCircle(
-        color = accentColor.copy(alpha = 0.72f),
-        radius = 2.5.dp.toPx(),
-        center = guideEnd,
+        color = accentColor.copy(alpha = 0.16f),
+        radius = 2.dp.toPx(),
+        center = arrowTail,
     )
 }
 

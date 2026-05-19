@@ -105,7 +105,7 @@ private fun audiQ3SceneConfig(): CarSceneConfig {
                 focusY = 0.64f,
                 focusZ = -0.94f,
             ),
-            highlightColor = Color(0xFF25B7FF),
+            highlightColor = Color(0xFF58BFEA),
         ),
         SceneNode(
             id = "engine",
